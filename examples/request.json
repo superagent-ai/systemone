@@ -1,0 +1,32 @@
+{
+  "model": "nagato",
+  "state": {
+    "ticket": "My card was charged twice. Please refund the duplicate.",
+    "plan": "business"
+  },
+  "questions": {
+    "urgent": {
+      "type": "noul",
+      "instructions": "Does `ticket` convey urgency?",
+      "criteria": {
+        "true": "Explicitly time-sensitive",
+        "false": "No urgency expressed"
+      }
+    },
+    "team": {
+      "type": "choice",
+      "instructions": "Which team should handle `ticket`?",
+      "criteria": {
+        "billing": "Payments, invoicing, and refunds",
+        "technical": "Bugs, outages, and integrations",
+        "sales": "Pricing, upgrades, and new accounts"
+      }
+    },
+    "frustration": {
+      "type": "score",
+      "instructions": "How frustrated is the customer in `ticket`?",
+      "criteria": ["Calm", "Frustrated", "Very angry"]
+    }
+  }
+}
+
