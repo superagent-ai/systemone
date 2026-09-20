@@ -80,24 +80,20 @@ def verify_artifacts() -> tuple[Path, Path]:
 
 
 def tokenizer_snapshot() -> str:
-    from huggingface_hub import snapshot_download
-
-    return snapshot_download(
-        SOURCE_MODEL,
-        revision=SOURCE_REVISION,
-        cache_dir="/cache/huggingface",
-        local_files_only=True,
-        allow_patterns=[
-            "config.json",
-            "tokenizer*",
-            "special_tokens_map.json",
-            "added_tokens.json",
-            "chat_template*",
-            "vocab*",
-            "merges.txt",
-            "*.model",
-        ],
+    owner, model = SOURCE_MODEL.split("/", 1)
+    snapshot = (
+        Path("/cache/huggingface/hub") / f"models--{owner}--{model}" / "snapshots" / SOURCE_REVISION
     )
+    required = {
+        "config.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "chat_template.jinja",
+    }
+    missing = sorted(name for name in required if not (snapshot / name).is_file())
+    if missing:
+        raise RuntimeError(f"Pinned tokenizer snapshot is incomplete: {missing}")
+    return str(snapshot)
 
 
 def launch_sglang(model_path: Path, tokenizer_path: str) -> subprocess.Popen:
