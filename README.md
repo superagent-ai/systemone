@@ -10,6 +10,10 @@ The production deployment uses the verified Nagato 27B release:
 - SGLang selected-token log probabilities, with one-token deterministic answer labels;
 - a 32,768-token branch context and no silent truncation.
 
+Production endpoint: `https://superagentai--nagato-api-web.modal.run`
+
+API reference: `https://superagentai--nagato-api-web.modal.run/`
+
 ## API
 
 ```http
