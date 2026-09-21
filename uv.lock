@@ -670,46 +670,6 @@ wheels = [
 ]
 
 [[package]]
-name = "nagato-api"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "fastapi" },
-    { name = "httpx" },
-    { name = "orjson" },
-    { name = "pydantic-settings" },
-    { name = "transformers" },
-    { name = "uvicorn", extra = ["standard"] },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "respx" },
-    { name = "ruff" },
-]
-modal = [
-    { name = "modal" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastapi", specifier = ">=0.116,<1" },
-    { name = "httpx", specifier = ">=0.28,<1" },
-    { name = "modal", marker = "extra == 'modal'", specifier = ">=1.1,<2" },
-    { name = "orjson", specifier = ">=3.10,<4" },
-    { name = "pydantic-settings", specifier = ">=2.10,<3" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4,<9" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.1,<2" },
-    { name = "respx", marker = "extra == 'dev'", specifier = ">=0.22,<1" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12,<1" },
-    { name = "transformers", specifier = ">=4.56,<5" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.35,<1" },
-]
-provides-extras = ["dev", "modal"]
-
-[[package]]
 name = "numpy"
 version = "2.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1291,6 +1251,46 @@ sdist = { url = "https://files.pythonhosted.org/packages/5d/1c/f51dc54bbd3029910
 wheels = [
     { url = "https://files.pythonhosted.org/packages/06/74/ad9b99520f70c0bc3318e582e359d360cfc0f7afd7bf368a7f24013cece7/synchronicity-0.12.5-py3-none-any.whl", hash = "sha256:fdbbb10d437bc08a6b0f814fc66fddd1b58ffed314533d42f1ab555801e781af", size = 41107, upload-time = "2026-06-18T21:06:22.505Z" },
 ]
+
+[[package]]
+name = "systemone-api"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "orjson" },
+    { name = "pydantic-settings" },
+    { name = "transformers" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "respx" },
+    { name = "ruff" },
+]
+modal = [
+    { name = "modal" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", specifier = ">=0.116,<1" },
+    { name = "httpx", specifier = ">=0.28,<1" },
+    { name = "modal", marker = "extra == 'modal'", specifier = ">=1.1,<2" },
+    { name = "orjson", specifier = ">=3.10,<4" },
+    { name = "pydantic-settings", specifier = ">=2.10,<3" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4,<9" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.1,<2" },
+    { name = "respx", marker = "extra == 'dev'", specifier = ">=0.22,<1" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12,<1" },
+    { name = "transformers", specifier = ">=4.56,<5" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.35,<1" },
+]
+provides-extras = ["dev", "modal"]
 
 [[package]]
 name = "tokenizers"

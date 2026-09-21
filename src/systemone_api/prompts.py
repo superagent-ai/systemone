@@ -13,7 +13,7 @@ SYSTEM_PROMPT = (
 
 
 def compact_json(value: Any) -> str:
-    # Preserve insertion order: Nagato was trained on evidence, criterion, options.
+    # Preserve insertion order: SystemOne was trained on evidence, criterion, options.
     return json.dumps(value, ensure_ascii=False, allow_nan=False)
 
 

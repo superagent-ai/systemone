@@ -8,8 +8,8 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 RUN pip install --no-cache-dir .
 
-RUN useradd --create-home --uid 10001 nagato
-USER nagato
+RUN useradd --create-home --uid 10001 systemone
+USER systemone
 EXPOSE 8000
-CMD ["nagato", "serve", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["systemone", "serve", "--host", "0.0.0.0", "--port", "8000"]
 

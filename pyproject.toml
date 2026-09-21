@@ -3,9 +3,9 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "nagato-api"
+name = "systemone-api"
 version = "0.1.0"
-description = "OpenJev-compatible deterministic classification API for Nagato"
+description = "OpenJev-compatible deterministic classification API for SystemOne"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = { text = "Proprietary" }
@@ -28,10 +28,10 @@ dev = [
 modal = ["modal>=1.1,<2"]
 
 [project.scripts]
-nagato = "nagato_api.cli:main"
+systemone = "systemone_api.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/nagato_api"]
+packages = ["src/systemone_api"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -40,7 +40,7 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["deployment/runtime/nagato_svdquant_recipe.py"]
+extend-exclude = ["deployment/runtime/systemone_svdquant_recipe.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "ASYNC"]

@@ -2,10 +2,10 @@ from dataclasses import dataclass
 
 from fastapi.testclient import TestClient
 
-from nagato_api.api import create_app
-from nagato_api.config import Settings
-from nagato_api.models import ChoiceAnswer, SystemOneResponse, Usage
-from nagato_api.service import Evaluation
+from systemone_api.api import create_app
+from systemone_api.config import Settings
+from systemone_api.models import ChoiceAnswer, SystemOneResponse, Usage
+from systemone_api.service import Evaluation
 
 
 class FakeBackend:
@@ -65,7 +65,8 @@ def test_systemone_wire_contract():
     assert response.status_code == 200
     assert response.json()["answers"]["team"]["choice"] == "security"
     assert response.json()["usage"] == {"input_tokens": 42, "output_tokens": 2}
-    assert response.headers["x-nagato-prefix-tokens"] == "20"
+    assert response.headers["x-systemone-prefix-tokens"] == "20"
+    assert "x-systemone-request-id" in response.headers
 
 
 def test_auth_is_required_for_api_routes():
@@ -90,6 +91,17 @@ def test_openapi_advertises_bearer_auth_and_systemone_route():
     assert any(
         value["scheme"] == "bearer" for value in schema["components"]["securitySchemes"].values()
     )
+    assert schema["info"]["title"] == "SystemOne API"
+
+
+def test_models_use_systemone_identity():
+    with client() as api:
+        response = api.get("/v1/models", headers={"Authorization": "Bearer test-key"})
+    assert response.status_code == 200
+    body = response.json()
+    assert "systemone" in {model["id"] for model in body["data"]}
+    assert {model["owned_by"] for model in body["data"]} == {"systemone"}
+    assert "nagato" not in response.text.lower()
 
 
 def test_model_defaults_to_openjev_for_compatibility():

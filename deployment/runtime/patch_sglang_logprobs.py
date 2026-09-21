@@ -24,7 +24,7 @@ def main():
     )
     after = before[:start] + fixed + before[end:]
     path.write_text(after)
-    Path("/opt/nagato-logprob-patch.json").write_text(
+    Path("/opt/systemone-logprob-patch.json").write_text(
         json.dumps(
             {
                 "path": str(path),

@@ -5,7 +5,7 @@ from typing import Any
 
 def load_tokenizer(model_path: str) -> Any:
     if not model_path:
-        raise RuntimeError("NAGATO_MODEL_PATH is required when the API loads its own tokenizer")
+        raise RuntimeError("SYSTEMONE_MODEL_PATH is required when the API loads its own tokenizer")
     os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
     from transformers import AutoTokenizer
 

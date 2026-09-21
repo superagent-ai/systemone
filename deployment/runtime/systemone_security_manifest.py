@@ -1,8 +1,9 @@
 import math
 import re
 
-from nagato_svdquant_recipe import RECIPES
+from systemone_svdquant_recipe import RECIPES
 
+# These are immutable identities inside the already-verified export manifest.
 RUN = "nagato-security-mix-export-v1-20260920"
 BASE = "nagato-fp8-v2-20260918-export"
 IDENTITY = {
@@ -21,13 +22,13 @@ def validate_manifest(manifest):
         or manifest.get("rank") != 128
         or manifest.get("all_roundtrips_equal") is not True
     ):
-        raise ValueError("Unexpected Nagato sidecar identity or format")
+        raise ValueError("Unexpected SystemOne sidecar identity or format")
     expected = {f"model.language_model.layers.{index}.mlp" for index in range(64)}
     modules = manifest.get("modules", {})
     files = manifest.get("output_files", {})
     expected_files = {f"layer-{index:03d}.safetensors" for index in range(64)}
     if set(modules) != expected or set(files) != expected_files:
-        raise ValueError("Incomplete Nagato sidecar")
+        raise ValueError("Incomplete SystemOne sidecar")
     for index in range(64):
         filename = f"layer-{index:03d}.safetensors"
         info = files[filename]

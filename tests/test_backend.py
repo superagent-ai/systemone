@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from nagato_api.backend import parse_generation
+from systemone_api.backend import parse_generation
 
 
 def test_selected_logprobs_are_reordered_to_requested_ids():

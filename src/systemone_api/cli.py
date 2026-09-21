@@ -9,15 +9,15 @@ def serve(args) -> None:
     import uvicorn
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    uvicorn.run("nagato_api.api:app", host=args.host, port=args.port, workers=args.workers)
+    uvicorn.run("systemone_api.api:app", host=args.host, port=args.port, workers=args.workers)
 
 
 def smoke(args) -> None:
     import httpx
 
-    key = args.api_key or os.environ.get("NAGATO_API_KEY", "")
+    key = args.api_key or os.environ.get("SYSTEMONE_API_KEY", "")
     if not key:
-        raise SystemExit("Pass --api-key or set NAGATO_API_KEY")
+        raise SystemExit("Pass --api-key or set SYSTEMONE_API_KEY")
     base_url = args.url.rstrip("/")
     started = time.monotonic()
     deadline = started + args.startup_timeout
@@ -30,10 +30,10 @@ def smoke(args) -> None:
             except httpx.HTTPError:
                 pass
             if time.monotonic() >= deadline:
-                raise SystemExit("Nagato did not become ready before the smoke-test deadline")
+                raise SystemExit("SystemOne did not become ready before the smoke-test deadline")
             time.sleep(5)
         payload = {
-            "model": "nagato",
+            "model": "systemone",
             "state": "My card was charged twice. Please refund the duplicate today.",
             "questions": {
                 "refund": {
@@ -69,7 +69,7 @@ def smoke(args) -> None:
             for question_id, answer in body.get("answers", {}).items()
         }
         if observed != expected:
-            raise SystemExit("Nagato returned an invalid typed-answer contract")
+            raise SystemExit("SystemOne returned an invalid typed-answer contract")
         print(
             json.dumps(
                 {
@@ -78,7 +78,7 @@ def smoke(args) -> None:
                     "inference_seconds": round(time.monotonic() - inference_started, 3),
                     "model": body.get("model"),
                     "usage": body.get("usage"),
-                    "request_id": response.headers.get("x-nagato-request-id"),
+                    "request_id": response.headers.get("x-systemone-request-id"),
                     "server_timing": response.headers.get("server-timing"),
                 },
                 indent=2,
@@ -87,14 +87,14 @@ def smoke(args) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="nagato")
+    parser = argparse.ArgumentParser(prog="systemone")
     commands = parser.add_subparsers(dest="command", required=True)
     serve_parser = commands.add_parser("serve", help="Run the API process")
     serve_parser.add_argument("--host", default="0.0.0.0")
     serve_parser.add_argument("--port", type=int, default=8000)
     serve_parser.add_argument("--workers", type=int, default=1)
     serve_parser.set_defaults(handler=serve)
-    smoke_parser = commands.add_parser("smoke", help="Check a deployed Nagato API")
+    smoke_parser = commands.add_parser("smoke", help="Check a deployed SystemOne API")
     smoke_parser.add_argument("url")
     smoke_parser.add_argument("--api-key")
     smoke_parser.add_argument("--startup-timeout", type=float, default=1_200)

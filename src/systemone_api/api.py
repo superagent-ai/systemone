@@ -21,7 +21,7 @@ from .prompts import PromptCompiler
 from .runtime import load_tokenizer, wait_until_ready
 from .service import EvaluationService, RequestRejected
 
-logger = logging.getLogger("nagato.api")
+logger = logging.getLogger("systemone.api")
 bearer_auth = HTTPBearer(auto_error=False)
 
 
@@ -84,14 +84,14 @@ class RequestGuard:
         async def add_header(message):
             if message["type"] == "http.response.start":
                 message.setdefault("headers", []).append(
-                    (b"x-nagato-request-id", request_id.encode())
+                    (b"x-systemone-request-id", request_id.encode())
                 )
             await send(message)
 
         await self.app(scope, receive, add_header)
 
     async def _error(self, send, receive, scope, status: int, message: str, request_id: str):
-        headers = {"x-nagato-request-id": request_id}
+        headers = {"x-systemone-request-id": request_id}
         if status == 401:
             headers["WWW-Authenticate"] = "Bearer"
         response = ORJSONResponse(
@@ -142,10 +142,10 @@ def create_app(
             yield
 
     app = FastAPI(
-        title="Nagato API",
+        title="SystemOne API",
         summary="Deterministic structured classification",
         description=(
-            "OpenJev-compatible SystemOne API backed by Nagato. Send shared state and typed "
+            "OpenJev-compatible SystemOne API backed by SystemOne. Send shared state and typed "
             "noul, choice, or score questions; receive probability distributions in one call."
         ),
         version="0.1.0",
@@ -204,7 +204,7 @@ def create_app(
     async def reference():
         return HTMLResponse(
             """<!doctype html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Nagato API</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>SystemOne API</title>
 </head><body><div id="app"></div>
 <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
 <script>Scalar.createApiReference('#app',{url:'/openapi.json',theme:'saturn'});</script>
@@ -225,8 +225,8 @@ def create_app(
     async def systemone(payload: SystemOneRequest, request: Request):
         evaluation = await request.app.state.service.evaluate(payload)
         headers = {
-            "x-nagato-model": settings.served_model,
-            "x-nagato-prefix-tokens": str(evaluation.prefix_tokens),
+            "x-systemone-model": settings.served_model,
+            "x-systemone-prefix-tokens": str(evaluation.prefix_tokens),
             "Server-Timing": (
                 f"prepare;dur={evaluation.prepare_ms:.2f},"
                 f"prefill;dur={evaluation.prefill_ms:.2f},"
@@ -234,7 +234,7 @@ def create_app(
             ),
         }
         if evaluation.cached_tokens is not None:
-            headers["x-nagato-cached-tokens"] = str(evaluation.cached_tokens)
+            headers["x-systemone-cached-tokens"] = str(evaluation.cached_tokens)
         return ORJSONResponse(evaluation.response.model_dump(by_alias=True), headers=headers)
 
     @app.get("/v1/models", tags=["Models"], dependencies=[Depends(bearer_auth)])
@@ -242,13 +242,13 @@ def create_app(
         return {
             "object": "list",
             "data": [
-                {"id": name, "object": "model", "owned_by": "nagato"}
+                {"id": name, "object": "model", "owned_by": "systemone"}
                 for name in settings.accepted_models
             ],
             "models": [
                 {
                     "name": name,
-                    "description": f"Nagato classification using {settings.served_model}",
+                    "description": f"SystemOne classification using {settings.served_model}",
                     "release_date": settings.release_date,
                 }
                 for name in settings.accepted_models

@@ -1,5 +1,5 @@
-from nagato_api.models import SystemOneRequest
-from nagato_api.prompts import PromptCompiler, compact_json
+from systemone_api.models import SystemOneRequest
+from systemone_api.prompts import PromptCompiler, compact_json
 
 
 class FakeTokenizer:

@@ -1,4 +1,4 @@
-"""Production Modal deployment for the verified Nagato checkpoint."""
+"""Production Modal deployment for the verified SystemOne checkpoint."""
 
 import atexit
 import hashlib
@@ -11,9 +11,10 @@ from pathlib import Path
 
 import modal
 
-APP_NAME = "nagato-api"
-BASE_EXPORT = "nagato-fp8-v2-20260918-export"
-SIDECAR_EXPORT = "nagato-security-mix-export-v1-20260920"
+APP_NAME = "systemone-api"
+# Immutable artifact directory names predate the SystemOne product rename.
+LEGACY_BASE_EXPORT = "nagato-fp8-v2-20260918-export"
+LEGACY_SIDECAR_EXPORT = "nagato-security-mix-export-v1-20260920"
 SIDECAR_MANIFEST_SHA256 = "af06368cc746efb847d1f545487821bab28274eb4e89e87f4fd7a77066c8a46b"
 TUNING_CACHE_SHA256 = "57c020e85fe1deba8815c02e37a86896e5a56258c82471e83557e69abe9d6e9f"
 SOURCE_MODEL = "Qwen/Qwen3.8-27B"
@@ -22,7 +23,7 @@ SOURCE_REVISION = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
 app = modal.App(APP_NAME)
 artifacts = modal.Volume.from_name("openjev-rlcd-artifacts-v1", create_if_missing=False)
 cache = modal.Volume.from_name("rlcd-hf-cache-v1", create_if_missing=False)
-production_secret = modal.Secret.from_name("nagato-production")
+production_secret = modal.Secret.from_name("systemone-production")
 
 image = (
     modal.Image.from_registry("lmsysorg/sglang:v0.5.19-cu130")
@@ -33,7 +34,7 @@ image = (
         "/opt/sglang/bin/pip install --no-cache-dir "
         "'fastapi>=0.116,<1' 'httpx>=0.28,<1' 'orjson>=3.10,<4' "
         "'pydantic-settings>=2.10,<3' 'uvicorn[standard]>=0.35,<1'",
-        "/opt/sglang/bin/python /work/patch_nagato_mlp.py",
+        "/opt/sglang/bin/python /work/patch_systemone_mlp.py",
         "/opt/sglang/bin/python /work/patch_sglang_logprobs.py",
     )
     .env(
@@ -44,14 +45,14 @@ image = (
             "TOKENIZERS_PARALLELISM": "false",
             "SGLANG_RUST_SERVER": "0",
             "SGLANG_JIT_DEEPGEMM_PRECOMPILE": "0",
-            "NAGATO_BACKEND_URL": "http://127.0.0.1:30000",
-            "NAGATO_SERVED_MODEL": "nagato-27b-2026-09-20",
-            "NAGATO_MODEL_ALIASES": "nagato,nagato-latest,openjev,jev-latest",
-            "NAGATO_TEMPERATURE": "1.0905077326652577",
-            "NAGATO_MAX_INPUT_TOKENS": "32768",
-            "NAGATO_MAX_TOTAL_INPUT_TOKENS": "262144",
-            "NAGATO_MAX_CONCURRENT_REQUESTS": "32",
-            "NAGATO_MAX_CONCURRENT_BRANCHES": "128",
+            "SYSTEMONE_BACKEND_URL": "http://127.0.0.1:30000",
+            "SYSTEMONE_SERVED_MODEL": "systemone-27b-2026-09-20",
+            "SYSTEMONE_MODEL_ALIASES": "systemone,systemone-latest,openjev,jev-latest",
+            "SYSTEMONE_TEMPERATURE": "1.0905077326652577",
+            "SYSTEMONE_MAX_INPUT_TOKENS": "32768",
+            "SYSTEMONE_MAX_TOTAL_INPUT_TOKENS": "262144",
+            "SYSTEMONE_MAX_CONCURRENT_REQUESTS": "32",
+            "SYSTEMONE_MAX_CONCURRENT_BRANCHES": "128",
         }
     )
 )
@@ -66,16 +67,16 @@ def sha256(path: Path) -> str:
 
 
 def verify_artifacts() -> tuple[Path, Path]:
-    model_root = Path("/artifacts") / BASE_EXPORT
-    sidecar_root = Path("/artifacts") / SIDECAR_EXPORT
+    model_root = Path("/artifacts") / LEGACY_BASE_EXPORT
+    sidecar_root = Path("/artifacts") / LEGACY_SIDECAR_EXPORT
     manifest_path = sidecar_root / "export.json"
     if sha256(manifest_path) != SIDECAR_MANIFEST_SHA256:
-        raise RuntimeError("Nagato sidecar manifest does not match the verified release")
+        raise RuntimeError("SystemOne sidecar manifest does not match the verified release")
     if sha256(sidecar_root / "tuning-cache.json") != TUNING_CACHE_SHA256:
-        raise RuntimeError("Nagato kernel tactic cache does not match the verified release")
+        raise RuntimeError("SystemOne kernel tactic cache does not match the verified release")
     manifest = json.loads(manifest_path.read_text())
     if sha256(model_root / "export.json") != manifest["base_export_manifest_sha256"]:
-        raise RuntimeError("Nagato base model and correction sidecar do not match")
+        raise RuntimeError("SystemOne base model and correction sidecar do not match")
     return model_root / "merged", sidecar_root
 
 
@@ -173,20 +174,20 @@ def launch_sglang(model_path: Path, tokenizer_path: str) -> subprocess.Popen:
 def web():
     artifacts.reload()
     cache.reload()
-    from nagato_api.api import create_app
-    from nagato_api.config import Settings
+    from systemone_api.api import create_app
+    from systemone_api.config import Settings
 
     settings = Settings()
     if not settings.accepted_api_keys:
-        raise RuntimeError("NAGATO_API_KEYS must contain at least one production API key")
+        raise RuntimeError("SYSTEMONE_API_KEYS must contain at least one production API key")
     model_path, sidecar_path = verify_artifacts()
     tokenizer_path = tokenizer_snapshot()
     os.environ.update(
         {
-            "NAGATO_MODEL_PATH": tokenizer_path,
-            "NAGATO_SVDQUANT_MLP_ROOT": str(sidecar_path),
-            "NAGATO_SVDQUANT_MANIFEST_SHA256": SIDECAR_MANIFEST_SHA256,
-            "NAGATO_SVDQUANT_TUNING_SHA256": TUNING_CACHE_SHA256,
+            "SYSTEMONE_MODEL_PATH": tokenizer_path,
+            "SYSTEMONE_SVDQUANT_MLP_ROOT": str(sidecar_path),
+            "SYSTEMONE_SVDQUANT_MANIFEST_SHA256": SIDECAR_MANIFEST_SHA256,
+            "SYSTEMONE_SVDQUANT_TUNING_SHA256": TUNING_CACHE_SHA256,
         }
     )
     launch_sglang(model_path, tokenizer_path)

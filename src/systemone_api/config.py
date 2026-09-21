@@ -6,15 +6,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix="NAGATO_", env_file=".env", extra="ignore", case_sensitive=False
+        env_prefix="SYSTEMONE_", env_file=".env", extra="ignore", case_sensitive=False
     )
 
     api_keys: SecretStr = SecretStr("")
     backend_url: str = "http://127.0.0.1:30000"
     backend_api_key: SecretStr = SecretStr("")
     model_path: str = ""
-    served_model: str = "nagato-27b-2026-09-20"
-    model_aliases: str = "nagato,nagato-latest,openjev,jev-latest"
+    served_model: str = "systemone-27b-2026-09-20"
+    model_aliases: str = "systemone,systemone-latest,openjev,jev-latest"
     release_date: str = "2026-09-20"
 
     max_body_bytes: int = Field(default=1_048_576, ge=1_024, le=16_777_216)

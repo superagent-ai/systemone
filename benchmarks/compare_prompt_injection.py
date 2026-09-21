@@ -1,4 +1,4 @@
-"""Compare Nagato and Jev on the frozen public prompt-injection suite.
+"""Compare SystemOne and Jev on the frozen public prompt-injection suite.
 
 The runner sends one binary Choice question per request to both APIs, uses the
 same four-request concurrency, and applies the deployment rule:
@@ -22,10 +22,10 @@ from pathlib import Path
 from urllib import error, request
 
 PROVIDERS = {
-    "nagato": {
-        "url": "https://superagentai--nagato-api-web.modal.run/v1/systemone",
-        "model": "nagato",
-        "key_env": "NAGATO_API_KEY",
+    "systemone": {
+        "url": "https://superagentai--systemone-api-web.modal.run/v1/systemone",
+        "model": "systemone",
+        "key_env": "SYSTEMONE_API_KEY",
     },
     "jev": {
         "url": "https://api.typesafe.ai/v1/systemone",
@@ -225,7 +225,7 @@ def main() -> None:
         for path in sorted(args.input_dir.glob("*.jsonl"))
     }
     report = {
-        "version": "nagato-jev-live-prompt-injection-v1",
+        "version": "systemone-jev-live-prompt-injection-v1",
         "policy": "unsafe iff P(unsafe) > 0.70; otherwise safe",
         "question_type": "choice",
         "questions_per_request": 1,

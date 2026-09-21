@@ -31,7 +31,7 @@ class SGLangBackend:
             return False
 
     async def infer(self, input_ids: list[int], label_ids: list[int] | None = None) -> Generation:
-        request_id = f"nagato-{uuid4().hex}"
+        request_id = f"systemone-{uuid4().hex}"
         selected = label_ids or [0]
         payload = {
             "rid": request_id,

@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from nagato_api.scoring import choice_answer, confidence, noul_answer, score_answer
+from systemone_api.scoring import choice_answer, confidence, noul_answer, score_answer
 
 
 def test_noul_is_probability_of_true():
