@@ -73,6 +73,8 @@ def main() -> None:
     assert set(report["source_artifacts"]) == {
         "evaluation_summary_sha256",
         "jevbench_summary_sha256",
+        "adapter_model_sha256",
+        "adapter_config_sha256",
     }
     assert all(
         len(value) == 64 and all(character in "0123456789abcdef" for character in value)

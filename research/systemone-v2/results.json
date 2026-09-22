@@ -1,0 +1,375 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "run_id": "systemone-general-v2-full-20260922a",
+  "model": {
+    "source": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "checkpoint": {
+    "selected_step": 600,
+    "total_steps": 652,
+    "temperature": 1.0905077326652577,
+    "training_elapsed_seconds": 16829.973217708997,
+    "development": {
+      "baseline": {
+        "rows": 3806,
+        "accuracy": 0.8000525486074619,
+        "general_macro_accuracy": 0.7801704545454545,
+        "primary_score": 0.7979525097917954,
+        "nll": 0.48101662345587565,
+        "brier": 0.2738194411380192
+      },
+      "selected": {
+        "rows": 3806,
+        "accuracy": 0.8457698370993169,
+        "general_macro_accuracy": 0.8063371212121212,
+        "primary_score": 0.8363316764584621,
+        "nll": 0.3555005960230975,
+        "brier": 0.2131999821634506
+      }
+    }
+  },
+  "dataset": {
+    "training": {
+      "rows": 41632,
+      "sha256": "ac40ce0bd84f0f5eef42b0dc6f43c2fb25880260da90a98f5f269d6c46dfb8a5"
+    },
+    "development": {
+      "rows": 2871,
+      "sha256": "5143890e5de1c3d85790daad6a43e06175888f64f2c13273c791f84b19055375"
+    },
+    "calibration": {
+      "rows": 2867,
+      "sha256": "319b4bdbc542dd8fc3be36061b53f15d6b88aff0bd3e5990d000a70ab44dc25c"
+    },
+    "operational_evaluation": {
+      "rows": 800,
+      "sha256": "7eed76d379730a55d7e5122d12a31402ef15a1115e6ea544340eff5298229217"
+    }
+  },
+  "jevbench_public": {
+    "rows": 231,
+    "input_sha256": "888bc813fce3d26b4c63c5be221525e20ee7e24fb89adf305707a6e89144ef92",
+    "upstream_revision": "a1799db9673bf59010bc698753e729b04132431f",
+    "official_full_rows": 534,
+    "unavailable_rows": 303
+  },
+  "systems": {
+    "Base Qwen3.8-27B": {
+      "broad_macro_accuracy": 0.759696154719507,
+      "mmlu_pro": {
+        "n": 12032,
+        "accuracy": 0.5839428191489362,
+        "nll": 1.2627724253561294,
+        "brier": 0.5274335130938113
+      },
+      "rewardbench_2": {
+        "n": 1763,
+        "accuracy": 0.8014747589336358,
+        "nll": 0.5245490831574694,
+        "brier": 0.26642093070539385
+      },
+      "truthfulqa_2025": {
+        "n": 790,
+        "accuracy": 0.8936708860759494,
+        "nll": 0.2950523446127184,
+        "brier": 0.16498954719301592
+      },
+      "typesafe_102_agreement": 0.8659615384615384,
+      "operations": {
+        "rows": 800,
+        "accuracy": 0.72375,
+        "nll": 0.6780820505944268,
+        "brier": 0.37187122012228974
+      },
+      "prompt_injection": {
+        "bipia-detector": {
+          "rows": 800,
+          "accuracy": 0.735,
+          "attack_recall": 0.6466666666666666,
+          "false_positive_rate": 0.0,
+          "precision": 1.0,
+          "balanced_accuracy": 0.8233333333333333,
+          "auroc": 0.9930916666666667,
+          "binary_brier": 0.19267905178419448,
+          "nll": 0.6180365352650081
+        },
+        "deepset-test": {
+          "rows": 116,
+          "accuracy": 0.7844827586206896,
+          "attack_recall": 0.5833333333333334,
+          "false_positive_rate": 0.0,
+          "precision": 1.0,
+          "balanced_accuracy": 0.7916666666666667,
+          "auroc": 0.9904761904761905,
+          "binary_brier": 0.16352645752910966,
+          "nll": 0.5168806517503735
+        },
+        "notinject": {
+          "rows": 339,
+          "accuracy": 0.9616519174041298,
+          "attack_recall": null,
+          "false_positive_rate": 0.038348082595870206,
+          "precision": 0.0,
+          "balanced_accuracy": null,
+          "auroc": null,
+          "binary_brier": 0.03715525746441941,
+          "nll": 0.13413643708750822
+        }
+      },
+      "jevbench_public": {
+        "rows": 231,
+        "accuracy": 0.8571428571428571,
+        "nll": 0.30235445506771835,
+        "brier": 0.17349798721359413,
+        "ece_10_bin": 0.04238816733995626
+      },
+      "latency": {
+        "scope": "Observed serving path",
+        "request_width": null,
+        "p50_seconds": 0.9798399109999991,
+        "p95_seconds": 0.9953066019999994
+      }
+    },
+    "SystemOne v1": {
+      "broad_macro_accuracy": 0.7674691823349683,
+      "mmlu_pro": {
+        "n": 12032,
+        "accuracy": 0.6008976063829787,
+        "nll": 1.208136010272925,
+        "brier": 0.5115601259322968
+      },
+      "rewardbench_2": {
+        "n": 1763,
+        "accuracy": 0.8230289279636982,
+        "nll": 0.5180186312244162,
+        "brier": 0.2635082121917609
+      },
+      "truthfulqa_2025": {
+        "n": 790,
+        "accuracy": 0.8784810126582279,
+        "nll": 0.30556859716794743,
+        "brier": 0.17546516379702676
+      },
+      "typesafe_102_agreement": 0.8659615384615384,
+      "operations": {
+        "rows": 800,
+        "accuracy": 0.9675,
+        "nll": 0.14109986640598174,
+        "brier": 0.061267326330235725
+      },
+      "prompt_injection": {
+        "bipia-detector": {
+          "rows": 800,
+          "accuracy": 0.94375,
+          "attack_recall": 0.9283333333333333,
+          "false_positive_rate": 0.01,
+          "precision": 0.9964221824686941,
+          "balanced_accuracy": 0.9591666666666666,
+          "auroc": 0.9971125,
+          "binary_brier": 0.04489499069583667,
+          "nll": 0.16567314104463648
+        },
+        "deepset-test": {
+          "rows": 116,
+          "accuracy": 0.896551724137931,
+          "attack_recall": 0.8166666666666667,
+          "false_positive_rate": 0.017857142857142856,
+          "precision": 0.98,
+          "balanced_accuracy": 0.8994047619047619,
+          "auroc": 0.9946428571428572,
+          "binary_brier": 0.059047340418668146,
+          "nll": 0.19580651650784886
+        },
+        "notinject": {
+          "rows": 339,
+          "accuracy": 0.8584070796460177,
+          "attack_recall": null,
+          "false_positive_rate": 0.1415929203539823,
+          "precision": 0.0,
+          "balanced_accuracy": null,
+          "auroc": null,
+          "binary_brier": 0.10600720323531307,
+          "nll": 0.3420285409042941
+        }
+      },
+      "jevbench_public": {
+        "rows": 231,
+        "accuracy": 0.8961038961038961,
+        "nll": 0.26636633944532395,
+        "brier": 0.1511111004587448,
+        "ece_10_bin": 0.03926316165877757
+      },
+      "latency": {
+        "scope": "Observed serving path",
+        "request_width": null,
+        "p50_seconds": 1.2070590130006167,
+        "p95_seconds": 1.2238131710000744
+      }
+    },
+    "SystemOne v2": {
+      "broad_macro_accuracy": 0.7633949300585083,
+      "mmlu_pro": {
+        "n": 12032,
+        "accuracy": 0.601063829787234,
+        "nll": 1.1833230740581189,
+        "brier": 0.5092361105928213
+      },
+      "rewardbench_2": {
+        "n": 1763,
+        "accuracy": 0.8043108338060124,
+        "nll": 0.5356874584925686,
+        "brier": 0.27308785867511787
+      },
+      "truthfulqa_2025": {
+        "n": 790,
+        "accuracy": 0.8848101265822785,
+        "nll": 0.3062950099209212,
+        "brier": 0.17363018545933576
+      },
+      "typesafe_102_agreement": 0.8759615384615385,
+      "operations": {
+        "rows": 800,
+        "accuracy": 0.8225,
+        "nll": 0.43463888790573274,
+        "brier": 0.24112900552866695
+      },
+      "prompt_injection": {
+        "bipia-detector": {
+          "rows": 800,
+          "accuracy": 0.81625,
+          "attack_recall": 0.755,
+          "false_positive_rate": 0.0,
+          "precision": 1.0,
+          "balanced_accuracy": 0.8775,
+          "auroc": 0.9938708333333334,
+          "binary_brier": 0.12354226492212518,
+          "nll": 0.4008899202217978
+        },
+        "deepset-test": {
+          "rows": 116,
+          "accuracy": 0.8189655172413793,
+          "attack_recall": 0.65,
+          "false_positive_rate": 0.0,
+          "precision": 1.0,
+          "balanced_accuracy": 0.825,
+          "auroc": 0.9927083333333333,
+          "binary_brier": 0.11566588052447423,
+          "nll": 0.34503047928518904
+        },
+        "notinject": {
+          "rows": 339,
+          "accuracy": 0.9144542772861357,
+          "attack_recall": null,
+          "false_positive_rate": 0.0855457227138643,
+          "precision": 0.0,
+          "balanced_accuracy": null,
+          "auroc": null,
+          "binary_brier": 0.05873601873209964,
+          "nll": 0.199592933588501
+        }
+      },
+      "jevbench_public": {
+        "rows": 231,
+        "accuracy": 0.8744588744588745,
+        "nll": 0.28220619445721884,
+        "brier": 0.15967190602435236,
+        "ece_10_bin": 0.022519737608831327
+      },
+      "latency": {
+        "scope": "Observed serving path",
+        "request_width": null,
+        "p50_seconds": 1.1622257590024674,
+        "p95_seconds": 1.1788617000020167
+      }
+    },
+    "Jev 1.13.0": {
+      "broad_macro_accuracy": 0.8806622828619832,
+      "mmlu_pro": {
+        "n": 12032,
+        "accuracy": 0.8147440159574468,
+        "nll": 1.0297567117015298,
+        "brier": 0.28758592756831697
+      },
+      "rewardbench_2": {
+        "n": 1763,
+        "accuracy": 0.8740782756664776,
+        "nll": 0.37066979778776377,
+        "brier": 0.1937233802007655
+      },
+      "truthfulqa_2025": {
+        "n": 790,
+        "accuracy": 0.9531645569620253,
+        "nll": 0.19228403416754425,
+        "brier": 0.07464329113924051
+      },
+      "typesafe_102_agreement": 0.8831410256410257,
+      "operations": {
+        "rows": null,
+        "accuracy": null,
+        "nll": null,
+        "brier": null
+      },
+      "prompt_injection": {
+        "bipia-detector": {
+          "rows": 800,
+          "accuracy": 0.7175,
+          "attack_recall": 0.6233333333333333,
+          "false_positive_rate": 0.0,
+          "precision": 1.0,
+          "balanced_accuracy": 0.8116666666666666,
+          "auroc": 0.9984,
+          "binary_brier": 0.192910625,
+          "nll": 0.600392435684514
+        },
+        "deepset-test": {
+          "rows": 116,
+          "accuracy": 0.7241379310344828,
+          "attack_recall": 0.4666666666666667,
+          "false_positive_rate": 0.0,
+          "precision": 1.0,
+          "balanced_accuracy": 0.7333333333333334,
+          "auroc": 0.9397321428571429,
+          "binary_brier": 0.21417758620689656,
+          "nll": 1.9586024776143467
+        },
+        "notinject": {
+          "rows": 339,
+          "accuracy": 0.976401179941003,
+          "attack_recall": null,
+          "false_positive_rate": 0.02359882005899705,
+          "precision": 0.0,
+          "balanced_accuracy": null,
+          "auroc": null,
+          "binary_brier": 0.021817699115044248,
+          "nll": 0.08256587347947247
+        }
+      },
+      "jevbench_public": {
+        "correct": 200,
+        "total": 231,
+        "accuracy": 0.8658008658008658
+      },
+      "latency": {
+        "scope": "Observed serving path",
+        "request_width": null,
+        "p50_seconds": 0.7034196249442175,
+        "p95_seconds": 0.8460643995786084
+      }
+    }
+  },
+  "source_artifacts": {
+    "evaluation_summary_sha256": "f9d950e3769210244c4e7b3ffa84bf7300d7b68262a5bc9b477cce6ce779796c",
+    "jevbench_summary_sha256": "5d991a25763ade9e7fa7fe9485463933dcd05f6b4de52753eef64cd33f521682",
+    "adapter_model_sha256": "e202dffbc1649d2af9406d9034ff90f29252e60bec9d9bdc3cacc54559fa40e8",
+    "adapter_config_sha256": "cc3d19e9fadad023852f6a9e172bcb2ce84fdcfe3211df1c078a2247687a8cc8"
+  },
+  "limitations": [
+    "JevBench covers the 231 public decisions, not its hidden 303 decisions or official 534-decision composite.",
+    "Jev general and security values are frozen evidence on identical datasets; operations has no Jev result.",
+    "SystemOne/base latency is warm local H200 execution; Jev latency includes its hosted network path.",
+    "Direct answer-slot scoring is a classifier protocol, not generative chain-of-thought evaluation.",
+    "This is one fixed training seed; replication across seeds is required before a production quality claim."
+  ]
+}

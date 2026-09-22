@@ -38,6 +38,16 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def sha256(value: str) -> str:
+    normalized = value.strip().lower()
+    invalid_character = any(
+        character not in "0123456789abcdef" for character in normalized
+    )
+    if len(normalized) != 64 or invalid_character:
+        raise argparse.ArgumentTypeError("expected a lowercase SHA-256 digest")
+    return normalized
+
+
 def maybe_metric(value: dict[str, Any] | None, key: str) -> float | None:
     return None if value is None else value.get(key)
 
@@ -215,6 +225,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--summary", type=Path, required=True)
     parser.add_argument("--jevbench", type=Path, required=True)
+    parser.add_argument("--adapter-model-sha256", type=sha256, required=True)
+    parser.add_argument("--adapter-config-sha256", type=sha256, required=True)
     parser.add_argument("--output-dir", type=Path, default=ROOT)
     args = parser.parse_args()
     output_json = args.output_dir / "results.json"
@@ -287,6 +299,8 @@ def main() -> None:
         "source_artifacts": {
             "evaluation_summary_sha256": digest(args.summary),
             "jevbench_summary_sha256": digest(args.jevbench),
+            "adapter_model_sha256": args.adapter_model_sha256,
+            "adapter_config_sha256": args.adapter_config_sha256,
         },
         "limitations": summary["limitations"],
     }
