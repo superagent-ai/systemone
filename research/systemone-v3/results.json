@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "run_id": "systemone-reasoning-v3-full-20260922a",
+  "model": {
+    "source": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "parent": {
+    "run_id": "systemone-general-v2-full-20260922a",
+    "selected_step": 600,
+    "adapter_sha256": "944dec10248e284a00675526987c92b67d6ee614002f7d233b2ff49c159458e9"
+  },
+  "checkpoint": {
+    "selected_step": 800,
+    "total_steps": 954,
+    "temperature": 0.805245165974627,
+    "development": {
+      "baseline_accuracy": 0.8344736842105264,
+      "selected_accuracy": 0.8994736842105263,
+      "baseline_macro": 0.8251666666666667,
+      "selected_macro": 0.8964166666666668,
+      "baseline_nll": 0.4160577637190736,
+      "selected_nll": 0.29006483348339757,
+      "baseline_brier": 0.2293648450171919,
+      "selected_brier": 0.15602929720946468
+    }
+  },
+  "dataset": {
+    "training": {"rows": 61053, "sha256": "a85ae15cfab1a990b09cc17ff4691e1336c97b73e5a37d543c0e170b10012e59"},
+    "development": {"rows": 2250, "sha256": "ff161fdfa56c0f2db573e8c8f8d84243f478ad40d4bf8c4be61b661a9fae5a25"},
+    "calibration": {"rows": 2250, "sha256": "2e7686c176b319ffdb5f0fe02c4fa7ccb8d9e5110710d7e4d89c69b6b279d007"},
+    "gsm8k_test": {"rows": 1319, "sha256": "e9e7618c578caef60fdf33e034904ceac60127340c2ec63c27c367300499e6f7"},
+    "teacher": {"rows": 61053, "sha256": "c49fae796c41e150af4dbb969af93a1a2a3890b8fe5f76804c564a4f61f66b1d"}
+  },
+  "systems": {
+    "Base Qwen3.8-27B": {"broad_macro": 0.759696154719507, "mmlu_pro": 0.5839428191489362, "rewardbench_2": 0.8014747589336358, "truthfulqa_2025": 0.8936708860759494, "gsm8k": 0.6345716451857468, "typesafe_102": 0.8659615384615384, "operations": 0.72375, "bipia_recall": 0.6466666666666666, "deepset_accuracy": 0.7844827586206896, "notinject_accuracy": 0.9616519174041298, "jevbench_public": 0.8571428571428571},
+    "SystemOne v2": {"broad_macro": 0.7633949300585083, "mmlu_pro": 0.601063829787234, "rewardbench_2": 0.8043108338060124, "truthfulqa_2025": 0.8848101265822785, "gsm8k": null, "typesafe_102": 0.8759615384615385, "operations": 0.8225, "bipia_recall": 0.755, "deepset_accuracy": 0.8189655172413793, "notinject_accuracy": 0.9144542772861357, "jevbench_public": 0.8744588744588745},
+    "SystemOne v3": {"broad_macro": 0.769385240217184, "mmlu_pro": 0.6332280585106383, "rewardbench_2": 0.8230289279636982, "truthfulqa_2025": 0.8518987341772152, "gsm8k": 0.8392714184988628, "typesafe_102": 0.8798076923076923, "operations": 0.83875, "bipia_recall": 0.875, "deepset_accuracy": 0.8620689655172413, "notinject_accuracy": 0.8761061946902655, "jevbench_public": 0.8744588744588745},
+    "Jev 1.13.0": {"broad_macro": 0.8806622828619832, "mmlu_pro": 0.8147440159574468, "rewardbench_2": 0.8740782756664776, "truthfulqa_2025": 0.9531645569620253, "gsm8k": null, "typesafe_102": 0.8831410256410257, "operations": null, "bipia_recall": 0.6233333333333333, "deepset_accuracy": 0.7241379310344828, "notinject_accuracy": 0.976401179941003, "jevbench_public": 0.8658008658008658}
+  },
+  "optimized_serving": {
+    "hardware": "NVIDIA B200",
+    "runtime": "SGLang 0.5.19",
+    "dtype": "bfloat16",
+    "serving_mode": "native_lora",
+    "requests": 37,
+    "decisions_per_request": 21,
+    "base": {"cold_p50_seconds": 0.5590327390000311, "cold_p95_seconds": 0.6013779423999949, "warm_p50_seconds": 0.4356541079998806, "warm_p95_seconds": 0.48371149119998336, "warm_decisions_per_second": 47.54520869778488},
+    "systemone_v3": {"cold_p50_seconds": 0.6582811479997872, "cold_p95_seconds": 0.744726013200215, "warm_p50_seconds": 0.47924596200027736, "warm_p95_seconds": 0.5134784119996766, "warm_decisions_per_second": 43.648191220680395},
+    "jev_hosted_observation": {"p50_seconds": 0.7034196249442175, "p95_seconds": 0.8460643995786084, "decisions_per_second": 29.160044587996794}
+  },
+  "jevbench_public": {
+    "rows": 231,
+    "input_sha256": "888bc813fce3d26b4c63c5be221525e20ee7e24fb89adf305707a6e89144ef92",
+    "upstream_revision": "a1799db9673bf59010bc698753e729b04132431f",
+    "official_full_rows": 534,
+    "unavailable_rows": 303
+  },
+  "source_artifacts": {
+    "evaluation_summary_sha256": "2c893fffa843227a44fd052149f72600870b432be60137fbbec7b5478feb06fd",
+    "jevbench_summary_sha256": "632eaf55cb1054fc5a45f21439bff0d1e48905072769ee16d22444d8c09d8295",
+    "sglang_summary_sha256": "188739c98ed5342aea001353077c1e23edabe3737c18027dc3aa3b81399f1db4",
+    "sglang_manifest_sha256": "3f551b04db9e99c3fac6add6eed196918d2a37cb609e152faaa0bd2191d6175c",
+    "adapter_model_sha256": "a1de5e6132f4f0a46225f16598c256c70cca44674f2bc7e55d82e833e73daf3d",
+    "adapter_config_sha256": "3511b2a4599ab7d27b2a1976430c6eac80c9aeadc4fffca283798c392edde791"
+  },
+  "limitations": [
+    "JevBench covers 231 public decisions, not the official 534-decision composite.",
+    "Direct answer-slot classification is not generative chain-of-thought evaluation.",
+    "SystemOne latency uses loopback B200 serving while Jev includes a hosted WAN path.",
+    "One fixed training seed is insufficient for a production parity claim."
+  ]
+}
