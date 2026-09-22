@@ -68,6 +68,14 @@ def main() -> None:
     assert report["checkpoint"]["total_steps"] == 652
     assert 0 <= report["checkpoint"]["selected_step"] <= 652
     assert report["checkpoint"]["temperature"] > 0
+    assert set(report["source_artifacts"]) == {
+        "evaluation_summary_sha256",
+        "jevbench_summary_sha256",
+    }
+    assert all(
+        len(value) == 64 and all(character in "0123456789abcdef" for character in value)
+        for value in report["source_artifacts"].values()
+    )
     list(walk(report))
     digest = hashlib.sha256(RESULTS.read_bytes()).hexdigest()
     print(json.dumps({"status": "verified", "results_sha256": digest}))

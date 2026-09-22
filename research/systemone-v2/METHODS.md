@@ -81,3 +81,7 @@ The JevBench comparison covers exactly 231 public decisions from upstream revisi
 - SystemOne/base latency is warm local H200 execution. Jev latency includes its hosted network path, so the numbers describe observed paths rather than identical serving stacks.
 - Direct answer-slot scoring evaluates classification, not generative chain-of-thought ability.
 - A single fixed seed is evidence for this run, not proof of broad production parity. Replication should precede a release decision.
+
+## Building the review package
+
+After the frozen evaluation and the 231-row public JevBench pass complete, `build_results.py` extracts aggregate metrics into `results.json` and renders `RESULTS.md`. The builder binds both source summaries by SHA-256 and refuses to overwrite an existing package. `verify_results.py` then checks the run identity, model revision, dataset provenance, checkpoint bounds, JevBench scope, finite metrics, and absence of raw or sensitive fields.
