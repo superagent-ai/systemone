@@ -68,6 +68,8 @@ def main() -> None:
     assert report["checkpoint"]["total_steps"] == 652
     assert 0 <= report["checkpoint"]["selected_step"] <= 652
     assert report["checkpoint"]["temperature"] > 0
+    assert report["checkpoint"]["development"]["baseline"]["rows"] == 3_806
+    assert report["checkpoint"]["development"]["selected"]["rows"] == 3_806
     assert set(report["source_artifacts"]) == {
         "evaluation_summary_sha256",
         "jevbench_summary_sha256",

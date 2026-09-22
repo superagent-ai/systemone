@@ -107,6 +107,7 @@ def latency(value: float | None) -> str:
 
 def markdown(report: dict[str, Any]) -> str:
     systems = report["systems"]
+    development = report["checkpoint"]["development"]
     columns = list(SYSTEMS)
     rows = [
         ("Broad benchmark macro", [systems[name]["broad_macro_accuracy"] for name in columns]),
@@ -152,6 +153,26 @@ def markdown(report: dict[str, Any]) -> str:
         "",
         f"Run `{report['run_id']}` selected checkpoint step "
         f"{report['checkpoint']['selected_step']} of {report['checkpoint']['total_steps']}.",
+        "",
+        "## Checkpoint selection",
+        "",
+        "| Development metric | Base | Selected checkpoint |",
+        "| --- | ---: | ---: |",
+        "| Accuracy | "
+        f"{percent(development['baseline']['accuracy'])} | "
+        f"{percent(development['selected']['accuracy'])} |",
+        "| General macro accuracy | "
+        f"{percent(development['baseline']['general_macro_accuracy'])} | "
+        f"{percent(development['selected']['general_macro_accuracy'])} |",
+        "| Primary selection score | "
+        f"{percent(development['baseline']['primary_score'])} | "
+        f"{percent(development['selected']['primary_score'])} |",
+        "| NLL (lower is better) | "
+        f"{development['baseline']['nll']:.4f} | {development['selected']['nll']:.4f} |",
+        "| Brier score (lower is better) | "
+        f"{development['baseline']['brier']:.4f} | {development['selected']['brier']:.4f} |",
+        "",
+        "## Held-out evaluation",
         "",
         "| Evaluation | " + " | ".join(columns) + " |",
         "| --- | " + " | ".join("---:" for _ in columns) + " |",
@@ -227,6 +248,30 @@ def main() -> None:
             "total_steps": training["steps"],
             "temperature": training["temperature"],
             "training_elapsed_seconds": training["training_elapsed_seconds"],
+            "development": {
+                "baseline": {
+                    key: training["baseline_development"][key]
+                    for key in (
+                        "rows",
+                        "accuracy",
+                        "general_macro_accuracy",
+                        "primary_score",
+                        "nll",
+                        "brier",
+                    )
+                },
+                "selected": {
+                    key: training["final_development"][key]
+                    for key in (
+                        "rows",
+                        "accuracy",
+                        "general_macro_accuracy",
+                        "primary_score",
+                        "nll",
+                        "brier",
+                    )
+                },
+            },
         },
         "dataset": DATASET,
         "jevbench_public": {
