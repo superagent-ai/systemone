@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "run_id": "systemone-general-v4-full-s1-20260923a",
+  "model": {
+    "source": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "parent": {
+    "run_id": "systemone-general-v2-full-20260922a",
+    "selected_step": 600,
+    "adapter_sha256": "944dec10248e284a00675526987c92b67d6ee614002f7d233b2ff49c159458e9"
+  },
+  "seed_selection": [
+    {"seed": 20260923, "run_id": "systemone-general-v4-full-s1-20260923a", "selected_step": 938, "primary_score": 0.8680511765941801, "nll": 0.3219328886577081},
+    {"seed": 20260924, "run_id": "systemone-general-v4-full-s2-20260923a", "selected_step": 300, "primary_score": 0.8604747411874817, "nll": 0.343859007866423},
+    {"seed": 20260925, "run_id": "systemone-general-v4-full-s3-20260923a", "selected_step": 200, "primary_score": 0.8514626199753604, "nll": 0.3632286690458869}
+  ],
+  "checkpoint": {
+    "selected_step": 938,
+    "total_steps": 938,
+    "temperature": 0.7071067811865475,
+    "development": {
+      "baseline_primary_score": 0.8424012563389968,
+      "selected_primary_score": 0.8680511765941801,
+      "baseline_reasoning": 0.8236666666666667,
+      "selected_reasoning": 0.8703333333333333,
+      "baseline_nll": 0.37294424528209286,
+      "selected_nll": 0.3219328886577081,
+      "baseline_brier": 0.215239626840413,
+      "selected_brier": 0.18368911673536611,
+      "baseline_attack_recall": 0.956140350877193,
+      "selected_attack_recall": 0.9736842105263158,
+      "baseline_false_positive_rate": 0.0029940119760479044,
+      "selected_false_positive_rate": 0.0029940119760479044
+    }
+  },
+  "dataset": {
+    "training": {"rows": 60000, "sha256": "e9a20528b14612cbe3f5453cbd6e085a5b5ce8a77ef1b3392cf135590e403b75"},
+    "development": {"rows": 2919, "sha256": "c1b5edd5c47a418c3d05fa4c502a442efea333c0a145bbdb14e2689745796147"},
+    "calibration": {"rows": 2919, "sha256": "fc7cb63dceef30dd8c691b974bc61a046a3f897322f6adfefc32184d516ff251"},
+    "operations_evaluation": {"rows": 800, "sha256": "7eed76d379730a55d7e5122d12a31402ef15a1115e6ea544340eff5298229217"},
+    "gsm8k_test": {"rows": 1319, "sha256": "e9e7618c578caef60fdf33e034904ceac60127340c2ec63c27c367300499e6f7"},
+    "mixture": {"reasoning": 33000, "factual_calibration": 9000, "security": 9000, "preference": 6000, "operations": 3000}
+  },
+  "systems": {
+    "Base Qwen3.8-27B": {"broad_macro": 0.759696154719507, "mmlu_pro": 0.5839428191489362, "rewardbench_2": 0.8014747589336358, "truthfulqa_2025": 0.8936708860759494, "typesafe_102": 0.8659615384615384, "operations": 0.72375, "bipia_recall": 0.6466666666666666, "bipia_fpr": 0.0, "deepset_accuracy": 0.7844827586206896, "notinject_accuracy": 0.9616519174041298, "jevbench_public": 0.8571428571428571},
+    "SystemOne v2": {"broad_macro": 0.7633949300585083, "mmlu_pro": 0.601063829787234, "rewardbench_2": 0.8043108338060124, "truthfulqa_2025": 0.8848101265822785, "typesafe_102": 0.8759615384615385, "operations": 0.8225, "bipia_recall": 0.755, "bipia_fpr": 0.0, "deepset_accuracy": 0.8189655172413793, "notinject_accuracy": 0.9144542772861357, "jevbench_public": 0.8744588744588745},
+    "SystemOne v4": {"broad_macro": 0.7733951356701175, "mmlu_pro": 0.6231715425531915, "rewardbench_2": 0.8235961429381735, "truthfulqa_2025": 0.8734177215189873, "typesafe_102": 0.8698076923076923, "operations": 0.8475, "bipia_recall": 0.9133333333333333, "bipia_fpr": 0.01, "deepset_accuracy": 0.896551724137931, "notinject_accuracy": 0.8525073746312685, "jevbench_public": 0.8658008658008658},
+    "Jev 1.13.0": {"broad_macro": 0.8806622828619832, "mmlu_pro": 0.8147440159574468, "rewardbench_2": 0.8740782756664776, "truthfulqa_2025": 0.9531645569620253, "typesafe_102": 0.8831410256410257, "operations": null, "bipia_recall": 0.6233333333333333, "bipia_fpr": 0.0, "deepset_accuracy": 0.7241379310344828, "notinject_accuracy": 0.976401179941003, "jevbench_public": 0.8658008658008658}
+  },
+  "optimized_serving": {
+    "hardware": "NVIDIA B200",
+    "runtime": "SGLang 0.5.19",
+    "dtype": "bfloat16",
+    "serving_mode": "native_lora",
+    "requests": 37,
+    "decisions_per_request": 21,
+    "base": {"cold_p50_seconds": 0.3966698890000089, "cold_p95_seconds": 0.43164529200005286, "warm_p50_seconds": 0.25546499299991865, "warm_p95_seconds": 0.28042090279998316, "warm_decisions_per_second": 81.816162176596},
+    "systemone_v4": {"cold_p50_seconds": 0.5229102309999689, "cold_p95_seconds": 0.5728709101999812, "warm_p50_seconds": 0.35347054600015326, "warm_p95_seconds": 0.3909263277999798, "warm_decisions_per_second": 59.30728091558983},
+    "jev_hosted_observation": {"p50_seconds": 0.7034196249442175, "p95_seconds": 0.8460643995786084, "decisions_per_second": 29.160044587996794}
+  },
+  "jevbench_public": {"rows": 231, "input_sha256": "888bc813fce3d26b4c63c5be221525e20ee7e24fb89adf305707a6e89144ef92", "upstream_revision": "a1799db9673bf59010bc698753e729b04132431f", "official_full_rows": 534, "unavailable_rows": 303},
+  "source_artifacts": {
+    "evaluation_summary_sha256": "3df2120fbd15db72afd63f3d156aba2caa2a7718acf6bf6d101a42e58d4900b6",
+    "jevbench_summary_sha256": "4f2460ef1052c212237c3d8fd9a18aaaf77f9c15bf6c631b487489ad3a490ff1",
+    "jevbench_comparison_sha256": "1f2cf6b347a2e2ec52d2e28b95dcb7380ffce028f56534e1f3725f306255b3b3",
+    "sglang_summary_sha256": "b5ba888876051203908ffb4aa75fe8431ffc1272fa7cf34c7f0bdf3603114278",
+    "sglang_manifest_sha256": "d769661733cf118d5375eb7ff6219b535a864c5d25c95d02cd4cdc80bd567c09",
+    "adapter_model_sha256": "debc76450ef2b42ed415793ee9e38cfd08f7b73b72176e860d538dbec48568b4",
+    "adapter_config_sha256": "4879b64a944f3d516aa10dbc9e9f7b3a8ff09123c042f87e53473bc4dd1031b1"
+  },
+  "limitations": [
+    "JevBench covers 231 public decisions, not the official 534-decision composite.",
+    "Direct answer-slot classification is not generative chain-of-thought evaluation.",
+    "SystemOne latency uses loopback B200 serving while Jev includes a hosted WAN path.",
+    "Three seeds reduce seed-selection risk but do not establish production parity with Jev."
+  ]
+}
+

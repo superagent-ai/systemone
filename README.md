@@ -111,9 +111,10 @@ SYSTEMONE_API_KEY="<customer-key>" uv run systemone smoke https://YOUR-ENDPOINT.
 
 ## Research results
 
+- [SystemOne v4 multi-objective continuation](research/systemone-v4/RESULTS.md)
 - [SystemOne v3 general-reasoning continuation](research/systemone-v3/RESULTS.md)
 - [SystemOne v2 general-classifier experiment](research/systemone-v2/RESULTS.md)
 
-The v3 package is a research evaluation, not the currently deployed production release. It contains
-aggregate results and reproducibility metadata only; training rows, teacher outputs, model weights,
-credentials, and customer data are not published.
+The v4 package is the latest research evaluation, not the currently deployed production release.
+It contains aggregate results and reproducibility metadata only; training rows, teacher outputs,
+model weights, credentials, and customer data are not published.
