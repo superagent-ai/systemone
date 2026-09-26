@@ -24,7 +24,7 @@ from urllib import error, request
 PROVIDERS = {
     "systemone": {
         "url": "https://superagentai--systemone-api-web.modal.run/v1/systemone",
-        "model": "systemone",
+        "model": "security-one",
         "key_env": "SYSTEMONE_API_KEY",
     },
     "jev": {

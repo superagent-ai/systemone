@@ -1,14 +1,15 @@
 # SystemOne API
 
-Production API for SystemOne's deterministic structured classification. Its public wire contract is compatible with OpenJev's `POST /v1/systemone`: one shared state, any mix of `noul`, `choice`, and `score` questions, and answers returned under the caller's question IDs.
+Production API for the Security-One deterministic structured-classification model. Its public wire contract is compatible with OpenJev's `POST /v1/systemone`: one shared state, any mix of `noul`, `choice`, and `score` questions, and answers returned under the caller's question IDs.
 
-The production deployment uses the verified SystemOne 27B release:
+The production deployment serves the verified AutoJev Security V2.3 release as `security-one`:
 
-- frozen Qwen3.8-27B base and RLCD adapter identity;
-- verified FP8 base plus calibrated rank-128 NVFP4 MLP correction sidecar;
-- fixed probability calibration temperature `1.0905077326652577`;
+- frozen Qwen3.8-27B BF16 checkpoint with an exact 255-way AutoJev readout export;
+- zero class flips and zero logit drift in the 64-example export gate;
+- fixed probability calibration temperature `0.14527332485151376`;
 - SGLang selected-token log probabilities, with one-token deterministic answer labels;
-- a 32,768-token branch context and no silent truncation.
+- shared-state prefix reuse for parallel questions;
+- a 65,536-token branch context and no silent truncation.
 
 Modal endpoint after the paused service is redeployed: `https://superagentai--systemone-api-web.modal.run`
 
@@ -35,10 +36,11 @@ curl "$SYSTEMONE_URL/v1/systemone" \
 - `choice` returns the highest-probability option, the full distribution, and normalized-entropy confidence.
 - `score` returns the expected zero-based level, a legend, the full distribution, and confidence.
 
-The aliases `systemone`, `systemone-latest`, `openjev`, and `jev-latest` all select the one loaded release. If `model` is omitted, it defaults to `openjev` for client compatibility.
+The aliases `security-one-latest`, `systemone`, `systemone-latest`, `openjev`, and `jev-latest` all select the same loaded release. If `model` is omitted, it defaults to `security-one`.
 
 Additional endpoints:
 
+- `GET /models` — public OpenRouter provider document (schema 2.4)
 - `GET /v1/models`
 - `GET /v1/limits`
 - `GET /health` for inference readiness
@@ -66,7 +68,7 @@ uv run --extra dev ruff check .
 
 ## Production on Modal
 
-The deployment is pinned to the already verified model artifacts in the private `openjev-rlcd-artifacts-v1` volume and the tokenizer cache in `rlcd-hf-cache-v1`. It starts one SGLang server and the API in the same B200 container, so the backend is never exposed publicly.
+The deployment is pinned to the verified `autojev-security-v2-3-sglang-export-20260925a` artifacts in the private `openjev-rlcd-artifacts-v1` volume. It starts one SGLang server and the API in the same B200 container, so the backend is never exposed publicly.
 
 Create the production secret once:
 

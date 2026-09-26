@@ -33,7 +33,7 @@ def smoke(args) -> None:
                 raise SystemExit("SystemOne did not become ready before the smoke-test deadline")
             time.sleep(5)
         payload = {
-            "model": "systemone",
+            "model": "security-one",
             "state": "My card was charged twice. Please refund the duplicate today.",
             "questions": {
                 "refund": {

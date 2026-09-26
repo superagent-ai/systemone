@@ -76,6 +76,21 @@ def test_auth_is_required_for_api_routes():
     assert response.json() == {"error": {"message": "Missing or invalid API key"}}
 
 
+def test_secondary_api_key_is_accepted():
+    settings = Settings(
+        api_keys="primary-key",
+        api_keys_secondary="testing-key",
+        model_path="unused",
+    )
+    with TestClient(create_app(settings, service=FakeService())) as api:
+        response = api.post(
+            "/v1/systemone",
+            json=payload(),
+            headers={"Authorization": "Bearer testing-key"},
+        )
+    assert response.status_code == 200
+
+
 def test_health_is_public():
     with client() as api:
         response = api.get("/health")
@@ -99,12 +114,30 @@ def test_models_use_systemone_identity():
         response = api.get("/v1/models", headers={"Authorization": "Bearer test-key"})
     assert response.status_code == 200
     body = response.json()
+    assert "security-one" in {model["id"] for model in body["data"]}
     assert "systemone" in {model["id"] for model in body["data"]}
     assert {model["owned_by"] for model in body["data"]} == {"systemone"}
     assert "nagato" not in response.text.lower()
 
 
-def test_model_defaults_to_openjev_for_compatibility():
+def test_openrouter_models_document_is_public_and_current():
+    with client() as api:
+        response = api.get("/models")
+    assert response.status_code == 200
+    model = response.json()["data"][0]
+    assert model["schema_version"] == "2.4"
+    assert model["id"] == "security-one"
+    assert model["hugging_face_id"] == "superagent-ai/security-one-27b"
+    assert model["quantization"] == "bf16"
+    assert model["input_modalities"][0]["supported_inputs"]["max_context_length"] == {
+        "value": 65_536,
+        "unit": "token",
+    }
+    assert model["input_modalities"][0]["pricing"][0]["cost_usd"] == "0.00000005"
+    assert model["output_modalities"][0]["pricing"][0]["cost_usd"] == "0"
+
+
+def test_model_defaults_to_security_one():
     request = payload()
     del request["model"]
     with client() as api:
@@ -112,7 +145,7 @@ def test_model_defaults_to_openjev_for_compatibility():
             "/v1/systemone", json=request, headers={"Authorization": "Bearer test-key"}
         )
     assert response.status_code == 200
-    assert response.json()["model"] == "openjev"
+    assert response.json()["model"] == "security-one"
 
 
 def test_invalid_question_returns_422():

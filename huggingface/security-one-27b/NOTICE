@@ -1,0 +1,10 @@
+Security-One-27B
+Copyright 2026 Superagent
+
+This product includes software and model weights derived from:
+
+- Qwen3.8-27B, Copyright 2026 Alibaba Cloud, Apache License 2.0.
+- AutoJev-27B by Denis Pplx, Apache License 2.0.
+
+Security-One-27B contains modifications and additional fine-tuning by Superagent.
+The names and trademarks of upstream projects are used only to describe provenance.

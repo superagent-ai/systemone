@@ -1,8 +1,11 @@
 from systemone_api.models import SystemOneRequest
-from systemone_api.prompts import PromptCompiler, compact_json
+from systemone_api.prompts import SYSTEM_PROMPT, PromptCompiler, describe
 
 
 class FakeTokenizer:
+    def __init__(self):
+        self.messages = None
+
     def encode(self, text, add_special_tokens=False):
         if len(text) <= 2 and text.isalpha() and text.isupper():
             return [sum(ord(char) for char in text)]
@@ -18,7 +21,14 @@ class FakeTokenizer:
 
     def apply_chat_template(self, messages, tokenize, add_generation_prompt, enable_thinking):
         assert not tokenize and add_generation_prompt and not enable_thinking
-        return "\n".join(f"{item['role']}:{item['content']}" for item in messages) + "\nassistant:"
+        self.messages = messages
+        rendered = []
+        for item in messages:
+            content = item["content"]
+            if isinstance(content, list):
+                content = "".join(part["text"] for part in content)
+            rendered.append(f"{item['role']}:{content}")
+        return "\n".join(rendered) + "\nassistant:"
 
 
 def test_compiler_preserves_ids_and_one_token_labels():
@@ -43,10 +53,39 @@ def test_compiler_preserves_ids_and_one_token_labels():
     assert len(prepared.common_prefix_ids) > 0
 
 
-def test_training_payload_order_is_stable():
-    rendered = compact_json(
-        {"evidence": "state", "criterion": "question", "options": [{"letter": "A"}]}
+def test_prompt_matches_autojev_v2_3_training_contract():
+    tokenizer = FakeTokenizer()
+    request = SystemOneRequest.model_validate(
+        {
+            "state": {"message": "hello"},
+            "questions": {
+                "safe": {
+                    "type": "noul",
+                    "instructions": "Is this safe?",
+                    "criteria": {"true": "Safe", "false": "Unsafe"},
+                }
+            },
+        }
     )
-    assert rendered.startswith(
-        '{"evidence": "state", "criterion": "question", "options": [{"letter": "A"}'
-    )
+    PromptCompiler(tokenizer).prepare(request)
+    assert tokenizer.messages == [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": (
+                        'State:\n{"message": "hello"}\n\nQuestion:\nIs this safe?'
+                        "\n\nOptions:\nA: true: Safe\nB: false: Unsafe"
+                        "\n\nReturn only the letter code of the best option."
+                    ),
+                }
+            ],
+        },
+    ]
+
+
+def test_describe_preserves_strings_and_serializes_structured_state():
+    assert describe("state") == "state"
+    assert describe({"message": "hello"}) == '{"message": "hello"}'

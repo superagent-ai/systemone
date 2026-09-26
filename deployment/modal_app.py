@@ -1,4 +1,4 @@
-"""Production Modal deployment for the verified SystemOne checkpoint."""
+"""Production Modal deployment for the verified SystemOne AutoJev V2.3 checkpoint."""
 
 import atexit
 import hashlib
@@ -12,11 +12,10 @@ from pathlib import Path
 import modal
 
 APP_NAME = "systemone-api"
-# Immutable artifact directory names predate the SystemOne product rename.
-LEGACY_BASE_EXPORT = "nagato-fp8-v2-20260918-export"
-LEGACY_SIDECAR_EXPORT = "nagato-security-mix-export-v1-20260920"
-SIDECAR_MANIFEST_SHA256 = "af06368cc746efb847d1f545487821bab28274eb4e89e87f4fd7a77066c8a46b"
-TUNING_CACHE_SHA256 = "57c020e85fe1deba8815c02e37a86896e5a56258c82471e83557e69abe9d6e9f"
+MODEL_EXPORT = "autojev-security-v2-3-sglang-export-20260925a"
+MODEL_EXPORT_MANIFEST_SHA256 = "6d4ae1b91f5431c895cb869f87298feb7306b22a48b706f13acc5e0ad42c23ba"
+TRAINING_RUN = "autojev-security-v2-3-full-20260925b"
+TRAINING_MODEL = "autojev-security-v2-3"
 SOURCE_MODEL = "Qwen/Qwen3.8-27B"
 SOURCE_REVISION = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
 
@@ -24,6 +23,7 @@ app = modal.App(APP_NAME)
 artifacts = modal.Volume.from_name("openjev-rlcd-artifacts-v1", create_if_missing=False)
 cache = modal.Volume.from_name("rlcd-hf-cache-v1", create_if_missing=False)
 production_secret = modal.Secret.from_name("systemone-production")
+testing_secret = modal.Secret.from_name("systemone-testing-key")
 
 image = (
     modal.Image.from_registry("lmsysorg/sglang:v0.5.19-cu130")
@@ -34,7 +34,6 @@ image = (
         "/opt/sglang/bin/pip install --no-cache-dir "
         "'fastapi>=0.116,<1' 'httpx>=0.28,<1' 'orjson>=3.10,<4' "
         "'pydantic-settings>=2.10,<3' 'uvicorn[standard]>=0.35,<1'",
-        "/opt/sglang/bin/python /work/patch_systemone_mlp.py",
         "/opt/sglang/bin/python /work/patch_sglang_logprobs.py",
     )
     .env(
@@ -46,11 +45,14 @@ image = (
             "SGLANG_RUST_SERVER": "0",
             "SGLANG_JIT_DEEPGEMM_PRECOMPILE": "0",
             "SYSTEMONE_BACKEND_URL": "http://127.0.0.1:30000",
-            "SYSTEMONE_SERVED_MODEL": "systemone-27b-2026-09-20",
-            "SYSTEMONE_MODEL_ALIASES": "systemone,systemone-latest,openjev,jev-latest",
-            "SYSTEMONE_TEMPERATURE": "1.0905077326652577",
-            "SYSTEMONE_MAX_INPUT_TOKENS": "32768",
-            "SYSTEMONE_MAX_TOTAL_INPUT_TOKENS": "262144",
+            "SYSTEMONE_SERVED_MODEL": "security-one",
+            "SYSTEMONE_MODEL_ALIASES": (
+                "security-one-latest,systemone,systemone-latest,openjev,jev-latest"
+            ),
+            "SYSTEMONE_RELEASE_DATE": "2026-09-25",
+            "SYSTEMONE_TEMPERATURE": "0.14527332485151376",
+            "SYSTEMONE_MAX_INPUT_TOKENS": "65536",
+            "SYSTEMONE_MAX_TOTAL_INPUT_TOKENS": "131072",
             "SYSTEMONE_MAX_CONCURRENT_REQUESTS": "32",
             "SYSTEMONE_MAX_CONCURRENT_BRANCHES": "128",
         }
@@ -66,35 +68,42 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def verify_artifacts() -> tuple[Path, Path]:
-    model_root = Path("/artifacts") / LEGACY_BASE_EXPORT
-    sidecar_root = Path("/artifacts") / LEGACY_SIDECAR_EXPORT
-    manifest_path = sidecar_root / "export.json"
-    if sha256(manifest_path) != SIDECAR_MANIFEST_SHA256:
-        raise RuntimeError("SystemOne sidecar manifest does not match the verified release")
-    if sha256(sidecar_root / "tuning-cache.json") != TUNING_CACHE_SHA256:
-        raise RuntimeError("SystemOne kernel tactic cache does not match the verified release")
+def verify_artifacts() -> Path:
+    model_root = Path("/artifacts") / MODEL_EXPORT
+    manifest_path = model_root / "export.json"
+    if sha256(manifest_path) != MODEL_EXPORT_MANIFEST_SHA256:
+        raise RuntimeError("SystemOne model manifest does not match the verified release")
     manifest = json.loads(manifest_path.read_text())
-    if sha256(model_root / "export.json") != manifest["base_export_manifest_sha256"]:
-        raise RuntimeError("SystemOne base model and correction sidecar do not match")
-    return model_root / "merged", sidecar_root
-
-
-def tokenizer_snapshot() -> str:
-    owner, model = SOURCE_MODEL.split("/", 1)
-    snapshot = (
-        Path("/cache/huggingface/hub") / f"models--{owner}--{model}" / "snapshots" / SOURCE_REVISION
-    )
-    required = {
-        "config.json",
-        "tokenizer.json",
-        "tokenizer_config.json",
-        "chat_template.jinja",
+    expected = {
+        "training_run_id": TRAINING_RUN,
+        "training_model_id": TRAINING_MODEL,
+        "base_source": SOURCE_MODEL,
+        "base_revision": SOURCE_REVISION,
+        "dtype": "bfloat16",
     }
-    missing = sorted(name for name in required if not (snapshot / name).is_file())
+    if any(manifest.get(key) != value for key, value in expected.items()):
+        raise RuntimeError("SystemOne model lineage does not match the verified release")
+    fidelity = manifest.get("fidelity", {})
+    if fidelity.get("rows") != 64 or fidelity.get("argmax_flips") != 0:
+        raise RuntimeError("SystemOne model failed its recorded export-fidelity gate")
+    merged = model_root / "merged"
+    missing = sorted(
+        name
+        for name in {
+            "config.json",
+            "tokenizer.json",
+            "tokenizer_config.json",
+            "chat_template.jinja",
+        }
+        if not (merged / name).is_file()
+    )
     if missing:
-        raise RuntimeError(f"Pinned tokenizer snapshot is incomplete: {missing}")
-    return str(snapshot)
+        raise RuntimeError(f"Pinned SystemOne model export is incomplete: {missing}")
+    for name, metadata in manifest.get("output_files", {}).items():
+        path = merged / name
+        if not path.is_file() or path.stat().st_size != metadata["bytes"]:
+            raise RuntimeError(f"Pinned SystemOne weight shard is incomplete: {name}")
+    return merged
 
 
 def launch_sglang(model_path: Path, tokenizer_path: str) -> subprocess.Popen:
@@ -114,7 +123,7 @@ def launch_sglang(model_path: Path, tokenizer_path: str) -> subprocess.Popen:
         "--dtype",
         "bfloat16",
         "--context-length",
-        "32768",
+        "65536",
         "--mem-fraction-static",
         ".85",
         "--max-running-requests",
@@ -124,19 +133,17 @@ def launch_sglang(model_path: Path, tokenizer_path: str) -> subprocess.Popen:
         "--max-mamba-cache-size",
         "128",
         "--mamba-ssm-dtype",
-        "bfloat16",
+        "float32",
+        "--mamba-radix-cache-strategy",
+        "extra_buffer",
         "--attention-backend",
         "trtllm_mha",
-        "--linear-attn-prefill-backend",
-        "flashinfer",
         "--chunked-prefill-size",
         "8192",
         "--cuda-graph-backend-prefill",
         "breakable",
         "--cuda-graph-max-bs-decode",
         "64",
-        "--fp8-gemm-backend",
-        "deep_gemm",
         "--enable-metrics",
     ]
     process = subprocess.Popen(command, start_new_session=True)
@@ -167,7 +174,7 @@ def launch_sglang(model_path: Path, tokenizer_path: str) -> subprocess.Popen:
     max_containers=1,
     scaledown_window=600,
     volumes={"/artifacts": artifacts, "/cache": cache},
-    secrets=[production_secret],
+    secrets=[production_secret, testing_secret],
 )
 @modal.concurrent(max_inputs=32)
 @modal.asgi_app()
@@ -180,15 +187,8 @@ def web():
     settings = Settings()
     if not settings.accepted_api_keys:
         raise RuntimeError("SYSTEMONE_API_KEYS must contain at least one production API key")
-    model_path, sidecar_path = verify_artifacts()
-    tokenizer_path = tokenizer_snapshot()
-    os.environ.update(
-        {
-            "SYSTEMONE_MODEL_PATH": tokenizer_path,
-            "SYSTEMONE_SVDQUANT_MLP_ROOT": str(sidecar_path),
-            "SYSTEMONE_SVDQUANT_MANIFEST_SHA256": SIDECAR_MANIFEST_SHA256,
-            "SYSTEMONE_SVDQUANT_TUNING_SHA256": TUNING_CACHE_SHA256,
-        }
-    )
+    model_path = verify_artifacts()
+    tokenizer_path = str(model_path)
+    os.environ["SYSTEMONE_MODEL_PATH"] = tokenizer_path
     launch_sglang(model_path, tokenizer_path)
     return create_app(Settings())

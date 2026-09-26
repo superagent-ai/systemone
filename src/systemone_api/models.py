@@ -44,7 +44,7 @@ Question = Annotated[NoulQuestion | ChoiceQuestion | ScoreQuestion, Field(discri
 class SystemOneRequest(StrictModel):
     state: Content
     questions: dict[str, Question] = Field(min_length=1, max_length=64)
-    model: str = Field(default="openjev", min_length=1)
+    model: str = Field(default="security-one", min_length=1)
 
     @model_validator(mode="after")
     def nonempty_question_ids(self):

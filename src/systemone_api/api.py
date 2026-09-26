@@ -33,7 +33,7 @@ class ORJSONResponse(JSONResponse):
 class RequestGuard:
     """Authenticate API routes and bound chunked bodies before JSON parsing."""
 
-    PUBLIC_PATHS = {"/", "/docs", "/openapi.json", "/health", "/health/live"}
+    PUBLIC_PATHS = {"/", "/docs", "/openapi.json", "/models", "/health", "/health/live"}
 
     def __init__(self, app: ASGIApp, settings: Settings):
         self.app = app
@@ -253,6 +253,68 @@ def create_app(
                 }
                 for name in settings.accepted_models
             ],
+        }
+
+    @app.get("/models", tags=["Models"])
+    async def provider_models():
+        """OpenRouter provider model document (schema 2.4)."""
+        return {
+            "data": [
+                {
+                    "schema_version": "2.4",
+                    "id": settings.served_model,
+                    "name": "Superagent: Security-One 27B",
+                    "hugging_face_id": "superagent-ai/security-one-27b",
+                    "created": 1790294400,
+                    "quantization": "bf16",
+                    "description": (
+                        "A calibrated 27B decision model for always-on security triage "
+                        "across applications, agents, code, and infrastructure."
+                    ),
+                    "input_modalities": [
+                        {
+                            "type": "text",
+                            "supported_inputs": {
+                                "max_context_length": {
+                                    "value": settings.max_input_tokens,
+                                    "unit": "token",
+                                }
+                            },
+                            "pricing": [
+                                {
+                                    "type": "prompt",
+                                    "unit": "token",
+                                    "cost_usd": "0.00000005",
+                                }
+                            ],
+                        }
+                    ],
+                    "output_modalities": [
+                        {
+                            "type": "text",
+                            "max_length": {"value": 65, "unit": "token"},
+                            "streaming": False,
+                            "supported_parameters": {},
+                            "pricing": [
+                                {
+                                    "type": "completion",
+                                    "unit": "token",
+                                    "cost_usd": "0",
+                                }
+                            ],
+                            "capacity": [
+                                {
+                                    "type": "concurrency",
+                                    "unit": "request",
+                                    "value": settings.max_concurrent_requests,
+                                }
+                            ],
+                        }
+                    ],
+                    "is_ready": True,
+                    "is_free": False,
+                }
+            ]
         }
 
     @app.get("/v1/limits", tags=["Limits"], dependencies=[Depends(bearer_auth)])
