@@ -7,10 +7,12 @@ base_model_relation: finetune
 language:
   - en
 tags:
-  - qwen3_5
+  - qwen3.8
   - safetensors
   - classification
   - decision-model
+  - jev
+  - system-one
   - prompt-injection
   - ai-security
   - security-routing
