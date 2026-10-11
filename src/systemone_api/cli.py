@@ -1,15 +1,59 @@
 import argparse
+import asyncio
 import json
 import logging
 import os
 import time
+from urllib.parse import urlsplit
+
+
+def benchmark(args) -> None:
+    import httpx
+
+    from .benchmark import benchmark_auth
+
+    key = os.environ.get("SYSTEMONE_API_KEY", "")
+    if not key:
+        raise SystemExit("Set SYSTEMONE_API_KEY securely in the environment")
+    target = urlsplit(args.url)
+    if (
+        target.scheme not in {"http", "https"} or not target.netloc
+        or target.username or target.password or target.query or target.fragment
+    ):
+        raise SystemExit("Use an HTTP(S) base URL without credentials or query parameters")
+    if not 1 <= args.requests <= 100_000 or not 1 <= args.concurrency <= 64 or args.warmup < 0:
+        raise SystemExit("Use 1..100000 requests, 1..64 concurrency and nonnegative warmup")
+
+    async def run():
+        async with httpx.AsyncClient(
+            base_url=args.url.rstrip("/"), timeout=httpx.Timeout(130, connect=5),
+            limits=httpx.Limits(
+                max_connections=args.concurrency, max_keepalive_connections=args.concurrency,
+            ),
+        ) as client:
+            return await benchmark_auth(
+                client, key, mode=args.mode, requests=args.requests,
+                concurrency=args.concurrency, warmup=args.warmup,
+            )
+
+    try:
+        result = asyncio.run(run())
+    except RuntimeError as exc:
+        raise SystemExit(str(exc)) from None
+    print(json.dumps(result, indent=2))
+    if result["status_counts"].get("200", 0) != args.requests:
+        raise SystemExit(1)
 
 
 def serve(args) -> None:
     import uvicorn
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    uvicorn.run("systemone_api.api:app", host=args.host, port=args.port, workers=args.workers)
+    # Structured application logs avoid raw URLs/query strings that may contain secrets.
+    uvicorn.run(
+        "systemone_api.api:app", host=args.host, port=args.port, workers=args.workers,
+        access_log=False,
+    )
 
 
 def smoke(args) -> None:
@@ -99,6 +143,15 @@ def main() -> None:
     smoke_parser.add_argument("--api-key")
     smoke_parser.add_argument("--startup-timeout", type=float, default=1_200)
     smoke_parser.set_defaults(handler=smoke)
+    benchmark_parser = commands.add_parser(
+        "benchmark-auth", help="Measure p50/p95 auth lookup and end-to-end latency",
+    )
+    benchmark_parser.add_argument("url")
+    benchmark_parser.add_argument("--mode", choices=["lookup", "inference"], default="lookup")
+    benchmark_parser.add_argument("--requests", type=int, default=200)
+    benchmark_parser.add_argument("--concurrency", type=int, default=8)
+    benchmark_parser.add_argument("--warmup", type=int, default=10)
+    benchmark_parser.set_defaults(handler=benchmark)
     args = parser.parse_args()
     args.handler(args)
 

@@ -24,16 +24,23 @@ artifacts = modal.Volume.from_name("openjev-rlcd-artifacts-v1", create_if_missin
 cache = modal.Volume.from_name("rlcd-hf-cache-v1", create_if_missing=False)
 production_secret = modal.Secret.from_name("systemone-production")
 testing_secret = modal.Secret.from_name("systemone-testing-key")
+customer_auth_secret = modal.Secret.from_name("systemone-customer-auth")
 
 image = (
     modal.Image.from_registry("lmsysorg/sglang:v0.5.19-cu130")
     .entrypoint([])
-    .add_local_dir("src", remote_path="/app/src", copy=True)
-    .add_local_dir("deployment/runtime", remote_path="/work", copy=True)
+    .add_local_dir(
+        "src", remote_path="/app/src", copy=True, ignore=["**/__pycache__/**", "**/*.pyc"],
+    )
+    .add_local_dir(
+        "deployment/runtime", remote_path="/work", copy=True,
+        ignore=["**/__pycache__/**", "**/*.pyc"],
+    )
     .run_commands(
         "/opt/sglang/bin/pip install --no-cache-dir "
         "'fastapi>=0.116,<1' 'httpx>=0.28,<1' 'orjson>=3.10,<4' "
         "'pydantic-settings>=2.10,<3' 'uvicorn[standard]>=0.35,<1'",
+        "/opt/sglang/bin/pip install --no-cache-dir 'asyncpg==0.31.0'",
         "/opt/sglang/bin/python /work/patch_sglang_logprobs.py",
     )
     .env(
@@ -146,7 +153,13 @@ def launch_sglang(model_path: Path, tokenizer_path: str) -> subprocess.Popen:
         "64",
         "--enable-metrics",
     ]
-    process = subprocess.Popen(command, start_new_session=True)
+    # The inference subprocess does not need front-door authentication credentials.
+    backend_env = {
+        key: value for key, value in os.environ.items()
+        if key not in {"SYSTEMONE_API_KEYS", "SYSTEMONE_API_KEYS_SECONDARY"}
+        and not key.startswith("SYSTEMONE_CUSTOMER_KEY_")
+    }
+    process = subprocess.Popen(command, start_new_session=True, env=backend_env)
     stopping = threading.Event()
 
     def stop_backend():
@@ -174,7 +187,7 @@ def launch_sglang(model_path: Path, tokenizer_path: str) -> subprocess.Popen:
     max_containers=1,
     scaledown_window=600,
     volumes={"/artifacts": artifacts, "/cache": cache},
-    secrets=[production_secret, testing_secret],
+    secrets=[production_secret, testing_secret, customer_auth_secret],
 )
 @modal.concurrent(max_inputs=32)
 @modal.asgi_app()
@@ -184,11 +197,11 @@ def web():
     from systemone_api.api import create_app
     from systemone_api.config import Settings
 
-    settings = Settings()
-    if not settings.accepted_api_keys:
-        raise RuntimeError("SYSTEMONE_API_KEYS must contain at least one production API key")
+    # Explicit argument prevents a missing/mis-set environment secret from opening auth.
+    settings = Settings(environment="production")
+    settings.validate_auth_config()
     model_path = verify_artifacts()
     tokenizer_path = str(model_path)
     os.environ["SYSTEMONE_MODEL_PATH"] = tokenizer_path
     launch_sglang(model_path, tokenizer_path)
-    return create_app(Settings())
+    return create_app(Settings(environment="production"))

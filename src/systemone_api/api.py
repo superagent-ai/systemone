@@ -1,9 +1,11 @@
 import asyncio
+import hashlib
 import json
 import logging
+import re
 import secrets
 import time
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from uuid import uuid4
 
 import httpx
@@ -14,6 +16,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from .auth import AuthenticatedKey, CustomerKeyValidator, customer_key_validator
 from .backend import BackendUnavailable, SGLangBackend
 from .config import Settings
 from .models import ErrorResponse, SystemOneRequest, SystemOneResponse
@@ -23,6 +26,7 @@ from .service import EvaluationService, RequestRejected
 
 logger = logging.getLogger("systemone.api")
 bearer_auth = HTTPBearer(auto_error=False)
+CUSTOMER_KEY = re.compile(r"sk_live_[0-9a-fA-F]{32}\Z", re.ASCII)
 
 
 class ORJSONResponse(JSONResponse):
@@ -43,17 +47,22 @@ class RequestGuard:
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
         request_id = uuid4().hex
-        headers = dict(scope["headers"])
-        if scope["path"] not in self.PUBLIC_PATHS and self.settings.accepted_api_keys:
-            supplied = headers.get(b"authorization", b"").decode("latin-1")
-            prefix = "Bearer "
-            token = supplied[len(prefix) :] if supplied.startswith(prefix) else ""
-            valid = False
-            for expected in self.settings.accepted_api_keys:
-                valid = secrets.compare_digest(token, expected) or valid
-            if not valid:
+        state = scope.setdefault("state", {})
+        state["auth_ms"] = 0.0
+        state["auth_lookup_ms"] = 0.0
+        if scope["path"] not in self.PUBLIC_PATHS:
+            started = time.perf_counter()
+            try:
+                status = await self._authenticate(scope)
+            except Exception:
+                # Do not expose/log injected validator or driver exception details.
+                status = 503
+            state["auth_ms"] = (time.perf_counter() - started) * 1000
+            if status:
                 return await self._error(
-                    send, receive, scope, 401, "Missing or invalid API key", request_id
+                    send, receive, scope, status,
+                    "Missing or invalid API key" if status == 401
+                    else "Authentication temporarily unavailable", request_id,
                 )
         if scope["method"] not in {"POST", "PUT", "PATCH"}:
             return await self._with_request_id(scope, receive, send, request_id)
@@ -80,12 +89,54 @@ class RequestGuard:
 
         await self._with_request_id(scope, replay, send, request_id)
 
+    async def _authenticate(self, scope: Scope) -> int | None:
+        state = scope["state"]
+        validator = scope["app"].state.customer_key_validator
+        if not self.settings.auth_required and validator is None:
+            state["authentication"] = AuthenticatedKey(source="development")
+            return None
+        supplied = [v for k, v in scope["headers"] if k.lower() == b"authorization"]
+        if len(supplied) != 1:
+            return 401
+        scheme, separator, token = supplied[0].decode("latin-1").partition(" ")
+        if scheme.lower() != "bearer" or not separator or not token or token != token.strip():
+            return 401
+        # compare_digest(str) rejects non-ASCII input; byte comparison handles it safely.
+        valid_static = False
+        for expected in self.settings.accepted_api_keys:
+            valid_static = secrets.compare_digest(token.encode(), expected.encode()) or valid_static
+        if valid_static:
+            state["authentication"] = AuthenticatedKey(source="static")
+            return None
+        if not CUSTOMER_KEY.fullmatch(token):
+            return 401
+        if validator is None:
+            return 503
+        lookup_started = time.perf_counter()
+        try:
+            key_hash = hashlib.sha256(token.encode("ascii")).hexdigest()
+            async with asyncio.timeout(self.settings.customer_auth_timeout_seconds):
+                principal = await validator.validate_hash(key_hash)
+        finally:
+            state["auth_lookup_ms"] = (time.perf_counter() - lookup_started) * 1000
+        if principal is None:
+            return 401
+        if (
+            principal.source != "organization"
+            or not principal.key_id
+            or not principal.organization_id
+        ):
+            return 503
+        state["authentication"] = principal
+        return None
+
     async def _with_request_id(self, scope, receive, send, request_id: str):
         async def add_header(message):
             if message["type"] == "http.response.start":
                 message.setdefault("headers", []).append(
                     (b"x-systemone-request-id", request_id.encode())
                 )
+                self._timing_headers(message["headers"], scope)
             await send(message)
 
         await self.app(scope, receive, add_header)
@@ -94,6 +145,11 @@ class RequestGuard:
         headers = {"x-systemone-request-id": request_id}
         if status == 401:
             headers["WWW-Authenticate"] = "Bearer"
+        if status == 503:
+            headers["Retry-After"] = "1"
+        timing = []
+        self._timing_headers(timing, scope)
+        headers.update({k.decode(): v.decode() for k, v in timing})
         response = ORJSONResponse(
             {"error": {"message": message}},
             status_code=status,
@@ -101,16 +157,43 @@ class RequestGuard:
         )
         await response(scope, receive, send)
 
+    @staticmethod
+    def _timing_headers(headers, scope):
+        state = scope.get("state", {})
+        timing = (
+            f"auth;dur={state.get('auth_ms', 0):.2f},"
+            f"auth_lookup;dur={state.get('auth_lookup_ms', 0):.2f}"
+        ).encode()
+        for i, (key, value) in enumerate(headers):
+            if key.lower() == b"server-timing":
+                headers[i] = (key, value + b"," + timing)
+                break
+        else:
+            headers.append((b"server-timing", timing))
+
 
 def create_app(
     settings: Settings | None = None,
     *,
     service: EvaluationService | None = None,
+    key_validator: CustomerKeyValidator | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
+    settings.validate_auth_config()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        async with AsyncExitStack() as stack:
+            if key_validator is None and settings.customer_auth_configured:
+                app.state.customer_key_validator = await stack.enter_async_context(
+                    customer_key_validator(settings)
+                )
+            async with inference_lifespan(app):
+                yield
+            app.state.customer_key_validator = key_validator
+
+    @asynccontextmanager
+    async def inference_lifespan(app: FastAPI):
         if service is not None:
             app.state.service = service
             app.state.startup_seconds = 0.0
@@ -155,19 +238,29 @@ def create_app(
         default_response_class=ORJSONResponse,
     )
     app.add_middleware(RequestGuard, settings=settings)
+    app.state.customer_key_validator = key_validator
 
     @app.middleware("http")
     async def access_log(request: Request, call_next):
         started = time.perf_counter()
         response = await call_next(request)
+        # Log known route templates only; arbitrary paths may contain credentials/content.
+        route = request.scope.get("route")
+        safe_path = (
+            getattr(route, "path", None)
+            or (request.url.path if request.url.path in RequestGuard.PUBLIC_PATHS else "<guarded>")
+        )
         logger.info(
             json.dumps(
                 {
                     "event": "request",
                     "method": request.method,
-                    "path": request.url.path,
+                    "path": safe_path,
                     "status": response.status_code,
                     "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                    "auth_ms": round(getattr(request.state, "auth_ms", 0.0), 2),
+                    "auth_lookup_ms": round(getattr(request.state, "auth_lookup_ms", 0.0), 2),
+                    "inference_ms": round(getattr(request.state, "inference_ms", 0.0), 2),
                 },
                 separators=(",", ":"),
             )
@@ -223,11 +316,14 @@ def create_app(
         dependencies=[Depends(bearer_auth)],
     )
     async def systemone(payload: SystemOneRequest, request: Request):
+        started = time.perf_counter()
         evaluation = await request.app.state.service.evaluate(payload)
+        request.state.inference_ms = (time.perf_counter() - started) * 1000
         headers = {
             "x-systemone-model": settings.served_model,
             "x-systemone-prefix-tokens": str(evaluation.prefix_tokens),
             "Server-Timing": (
+                f"inference;dur={request.state.inference_ms:.2f},"
                 f"prepare;dur={evaluation.prepare_ms:.2f},"
                 f"prefill;dur={evaluation.prefill_ms:.2f},"
                 f"branches;dur={evaluation.branches_ms:.2f}"

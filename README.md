@@ -57,7 +57,10 @@ cp .env.example .env
 uv run systemone serve
 ```
 
-Set `SYSTEMONE_MODEL_PATH` to the local tokenizer snapshot and `SYSTEMONE_BACKEND_URL` to SGLang. Local auth is disabled only when `SYSTEMONE_API_KEYS` is empty; the Modal deployment refuses to start without at least one key.
+Set `SYSTEMONE_MODEL_PATH` to the local tokenizer snapshot and `SYSTEMONE_BACKEND_URL` to SGLang.
+Local auth is disabled only when both static-key settings and the customer lookup URL are empty.
+Static-only local development remains supported. Modal forces production mode and refuses to
+start without customer-key validation configuration.
 
 Run the checks with:
 
@@ -70,14 +73,18 @@ uv run --extra dev ruff check .
 
 The deployment is pinned to the verified `autojev-security-v2-3-sglang-export-20260925a` artifacts in the private `openjev-rlcd-artifacts-v1` volume. It starts one SGLang server and the API in the same B200 container, so the backend is never exposed publicly.
 
-Create the production secret once:
+The prepared deployment accepts Superagent organization `sk_live_` keys through an authoritative,
+indexed SHA-256 lookup on every request. It preserves `SYSTEMONE_API_KEYS` and
+`SYSTEMONE_API_KEYS_SECONDARY` for internal/testing use. Authentication happens directly in Modal;
+there is no Next.js authentication hop or customer-key synchronization.
 
-```bash
-modal secret create systemone-production \
-  SYSTEMONE_API_KEYS="$(openssl rand -hex 32)"
-```
-
-Multiple early-user keys can be supplied as a comma-separated value. Then deploy:
+Before deploying, follow [authentication setup and rollout](docs/AUTHENTICATION.md): provision a
+dedicated read-only PostgreSQL role when possible, and a server-side Modal Secret
+`systemone-customer-auth`. Current production uses the documented server-only Supabase fallback
+because Supabase-managed PUBLIC permissions prevent a narrow direct-login role. Its service-role
+credential has broad project access; see the runbook's residual-risk section. Keep `systemone-production` and
+`systemone-testing-key` secrets unchanged. Do not deploy or change live secrets without approval.
+After approval and configuration, deploy:
 
 ```bash
 uv run --extra modal modal deploy deployment/modal_app.py
@@ -95,10 +102,13 @@ SYSTEMONE_API_KEY="<customer-key>" uv run systemone smoke https://YOUR-ENDPOINT.
 
 ## Operational behavior
 
-- API keys are compared in constant time and are never logged.
+- Static keys are compared in constant time; organization keys use a reused async client/pool and
+  uncached hash lookup. Keys, hashes, credentials, and organization identities are not logged.
 - State, questions, and prompts are never written to application logs.
 - Request bodies, question counts, option counts, per-branch context, total tokens, concurrency, and deadlines are bounded before or during admission.
 - Overload, timeout, and backend failures return `503` with `Retry-After: 1`.
+- Invalid/deleted keys return `401`; authentication outages fail closed with `503` before reading
+  the body or running inference. Authentication is measured separately from inference.
 - Each response includes `x-systemone-request-id`, `x-systemone-model`, cache diagnostics, and `Server-Timing` without exposing customer data.
 - `usage.output_tokens` reports the actual internal warm-up plus one-token decisions. Billing can still price output at zero; the usage record is not falsified.
 
@@ -108,8 +118,10 @@ SYSTEMONE_API_KEY="<customer-key>" uv run systemone smoke https://YOUR-ENDPOINT.
 2. Build the Modal image; its fail-closed source patches must apply exactly once.
 3. Smoke-test all three question types against the deployed URL.
 4. Run the frozen quality canary before moving customer traffic.
-5. Issue one API key per customer so individual keys can be revoked.
+5. Verify created/deleted organization keys, static fallback, public routes, and lookup outages;
+   benchmark p50/p95 lookup and end-to-end latency.
 6. Put the endpoint behind the production domain/rate limiter before broader access.
+7. Release the landing model API docs after hosted organization authentication is verified.
 
 ## Research results
 

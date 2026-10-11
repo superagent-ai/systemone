@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -11,6 +12,14 @@ class Settings(BaseSettings):
 
     api_keys: SecretStr = SecretStr("")
     api_keys_secondary: SecretStr = SecretStr("")
+    environment: Literal["development", "production"] = "development"
+    customer_key_database_url: SecretStr = SecretStr("")
+    customer_key_supabase_url: str = ""
+    customer_key_supabase_service_key: SecretStr = SecretStr("")
+    customer_auth_pool_size: int = Field(default=8, ge=1, le=32)
+    customer_auth_timeout_seconds: float = Field(default=1, gt=0, le=5)
+    customer_auth_connect_seconds: float = Field(default=1, gt=0, le=5)
+    customer_auth_query_seconds: float = Field(default=0.5, gt=0, le=5)
     backend_url: str = "http://127.0.0.1:30000"
     backend_api_key: SecretStr = SecretStr("")
     model_path: str = ""
@@ -33,6 +42,40 @@ class Settings(BaseSettings):
     @classmethod
     def strip_backend_url(cls, value: str) -> str:
         return value.rstrip("/")
+
+    def validate_auth_config(self) -> None:
+        rest_url = bool(self.customer_key_supabase_url)
+        rest_key = bool(self.customer_key_supabase_service_key.get_secret_value())
+        if rest_url != rest_key:
+            raise RuntimeError(
+                "Customer-key Supabase URL and server-side credential are both required"
+            )
+        if rest_url and not self.customer_key_supabase_url.startswith("https://"):
+            raise RuntimeError("Customer-key Supabase lookup requires HTTPS")
+        if (
+            self.environment == "production"
+            and not self.customer_auth_configured
+        ):
+            raise RuntimeError(
+                "Production requires SYSTEMONE_CUSTOMER_KEY_DATABASE_URL or a complete "
+                "SYSTEMONE_CUSTOMER_KEY_SUPABASE_URL / SUPABASE_SERVICE_KEY configuration"
+            )
+
+    @property
+    def customer_auth_configured(self) -> bool:
+        return bool(
+            self.customer_key_database_url.get_secret_value()
+            or (self.customer_key_supabase_url
+                and self.customer_key_supabase_service_key.get_secret_value())
+        )
+
+    @property
+    def auth_required(self) -> bool:
+        return bool(
+            self.environment == "production"
+            or self.accepted_api_keys
+            or self.customer_auth_configured
+        )
 
     @cached_property
     def accepted_models(self) -> tuple[str, ...]:
